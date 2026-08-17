@@ -1,1 +1,35 @@
-# Repository-specific ignore rules will be added with implementation scaffolding.
+# OS
+.DS_Store
+
+# Editors and IDEs
+.idea/
+.vscode/
+
+# Node dependencies
+node_modules/
+
+# TypeScript and lint caches
+*.tsbuildinfo
+.eslintcache
+
+# Build and packaging output
+dist/
+build/
+*.crx
+*.xpi
+
+# Test and coverage output
+coverage/
+test-results/
+playwright-report/
+blob-report/
+
+# Extension signing keys and store credentials
+*.pem
+*.p12
+*.key
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
