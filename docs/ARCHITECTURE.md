@@ -350,11 +350,11 @@ Rules:
 Representative calls:
 
 ```text
-POST /v2/devices/pair
-POST /v2/captures
-POST /v2/github/repositories
-GET  /v2/operations/{id}
-GET  /v2/capabilities
+POST /v1/devices/pair
+POST /v1/captures
+POST /v1/github/repositories
+GET  /v1/operations/{id}
+GET  /v1/capabilities
 ```
 
 The extension uses public contracts from `ratatoskr-contracts` and does not call internal provider services directly.

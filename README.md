@@ -1,10 +1,21 @@
 # Ratatoskr Browser Extension
 
-`ratatoskr-browser-extension` is the explicit browser capture client for Ratatoskr Next. It lets a user save the current page, selected text, or a supported social/GitHub URL to their local Ratatoskr deployment without exposing provider passwords, session cookies, or hidden browser APIs.
+`ratatoskr-browser-extension` is the explicit browser capture client for Ratatoskr. It lets a user save the current page, selected text, or a supported social/GitHub URL to their local Ratatoskr deployment without exposing provider passwords, session cookies, or hidden browser APIs.
 
 > **Status:** architecture bootstrap. No extension manifest, background worker, popup UI, content script, or API client is implemented yet.
 
-## Role in Ratatoskr Next
+> [!IMPORTANT]
+> **Ratatoskr is in development.** No database holds data that has to survive a schema change.
+> While this status holds, these two rules replace what the documents below plan:
+>
+> - the API and the database keep their first version. There is no `v2` and no later major
+>   version.
+> - the database has no migrations. One schema definition exists, and a schema change edits it in
+>   place.
+>
+> Only the repository owner changes this status.
+
+## Role in Ratatoskr
 
 The extension is a user-controlled capture surface. It answers one narrow question:
 
