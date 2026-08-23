@@ -281,7 +281,9 @@ A diagnostic export redacts tokens, notes, selected text, private URLs, and user
 
 ## Workspace integration
 
-`ratatoskr-workspace` pins the extension with compatible Platform, social, GitHub, Extractor, Knowledge, and public API contracts. Integration tests run the built extension against an isolated browser and workspace Compose profile.
+The planned workspace harness will pin the extension with compatible Platform, social, GitHub,
+Extractor, Knowledge, and public API contract commits. The pin, isolated-browser integration test,
+and workspace Compose profile do not exist yet.
 
 ## Project status
 

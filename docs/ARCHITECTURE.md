@@ -96,7 +96,7 @@ The service worker owns:
 - context-menu and command handling;
 - operation polling/notification;
 - browser action badge state;
-- migration of extension-local storage.
+- creation and validation of the current extension-local storage schema.
 
 No workflow relies on the worker staying alive continuously.
 
@@ -510,7 +510,7 @@ submission_retries
 operation_age
 completed/partial/failed results
 auth_required events
-storage migration failures
+storage schema failures
 content-script validation failures
 ```
 
@@ -532,7 +532,7 @@ No raw URL, title, selection, note, provider handle, or token is used as a metri
 ### Integration
 
 - background worker restart/suspension;
-- storage migrations;
+- fresh creation and validation of the current storage schema;
 - device pairing and revocation;
 - offline queue and retry;
 - Platform API error mapping;
