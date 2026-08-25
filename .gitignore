@@ -33,3 +33,4 @@ blob-report/
 .env
 .env.*
 !.env.example
+.omo/
