@@ -15,6 +15,7 @@ node_modules/
 # Build and packaging output
 dist/
 build/
+release/
 *.crx
 *.xpi
 
