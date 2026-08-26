@@ -15,12 +15,9 @@ describe('manifest baseline', () => {
     expect((manifest['version'] as string).length).toBeGreaterThan(0);
   });
 
-  it('permission baseline stays empty', () => {
+  it('requests only the active tab and explicit context-menu capability', () => {
     const manifest = loadManifest();
-    // Baseline from specs/build-and-packaging: no implemented feature needs a
-    // permission yet, so none may be requested. When a reviewed feature adds
-    // the first permission, update this test and the spec baseline together.
-    expect(manifest['permissions'] ?? []).toEqual([]);
+    expect(manifest['permissions']).toEqual(['activeTab', 'contextMenus']);
     expect(manifest['host_permissions'] ?? []).toEqual([]);
     expect(manifest['optional_permissions'] ?? []).toEqual([]);
   });

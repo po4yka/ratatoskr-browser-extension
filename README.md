@@ -105,7 +105,11 @@ The popup may expose:
 
 ### Context menu
 
-Planned commands:
+The extension requests `activeTab` for the explicit popup/current-page action and
+`contextMenus` for the explicit commands below. It does not request host permissions,
+history, cookies, or web-request access.
+
+Available commands:
 
 ```text
 Save page to Ratatoskr

@@ -5,9 +5,26 @@
     <title>Ratatoskr</title>
   </head>
   <body>
-    <main>
+    <main data-state="ready">
       <h1>Ratatoskr</h1>
-      <p data-role="status">Starting…</p>
+      <form data-role="capture-form">
+        <dl>
+          <div>
+            <dt>Page title</dt>
+            <dd><output data-role="draft-title">Loading…</output></dd>
+          </div>
+          <div>
+            <dt>URL</dt>
+            <dd><output data-role="draft-url">Loading…</output></dd>
+          </div>
+          <div>
+            <dt>Selected text</dt>
+            <dd><output data-role="draft-selection">No selected text is available in the popup.</output></dd>
+          </div>
+        </dl>
+        <button data-action="stage" type="submit">Stage capture</button>
+      </form>
+      <p aria-live="polite" data-role="status">Loading the active page…</p>
     </main>
     <script src="./popup.js"></script>
   </body>
