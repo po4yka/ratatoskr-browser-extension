@@ -1,9 +1,13 @@
 # Developing Ratatoskr Browser Extension
 
-> Status: Proposed  
-> Last reviewed: 2026-08-20
+> Status: Implemented  
+> Last reviewed: 2026-08-26
 
-Architecture bootstrap: Manifest V3 project, UI, service worker, content scripts, queue, device pairing, packaging, and CI are not implemented.
+The first scaffold exists: a Manifest V3 project with stubbed service-worker, popup, and options
+surfaces, lint/typecheck/test/build tooling, a strict extension-pages CSP, deterministic zip
+packaging verified by a golden test, and `.github/workflows/ci.yml` running the gate below.
+Content scripts, capture behaviour, the local queue, device pairing, and the Platform API client
+are not implemented.
 
 ## Intended toolchain
 
@@ -11,7 +15,10 @@ TypeScript, WebExtensions/Manifest V3, a minimal UI framework/build tool, browse
 
 ## Code size limits
 
-There is no code here yet, so no limit is enforced yet. The commit that brings the first manifest brings the configuration that carries the limits with it: `clippy.toml` beside a `Cargo.toml`, `eslint.config.js` beside a `package.json`. `fleet.yml` fails the gate when a manifest arrives without one, so the rule has a check behind it and not only this paragraph.
+`eslint.config.js` carries the size limits beside `package.json`, as
+`ratatoskr-workspace/docs/QUALITY_GATES.md` requires: file length, function length, cyclomatic
+complexity, and parameter count, all at severity `error`. The values are the fleet TypeScript
+standard from that document; raising one is a measured change recorded there, never a silent bump.
 
 `ratatoskr-workspace/docs/QUALITY_GATES.md` holds the numbers the repositories with code use today, the command that measured each one, and the limits that were rejected with the reason. Read it before you choose numbers, then measure this tree. Each limit is set at the worst case the tree already has, so that the check fails on a regression and not on work that has not been done yet.
 
@@ -24,6 +31,28 @@ There is no code here yet, so no limit is enforced yet. The commit that brings t
 5. Test service-worker suspension/restart, hostile pages/messages, permission changes, offline retry, and data clearing.
 
 The first scaffold PR must document exact install/build/typecheck/test/package/load-unpacked commands. No provider cookie or password is ever required.
+
+## Commands
+
+Install once per clone (Node LTS line pinned by `.nvmrc`):
+
+```bash
+npm ci --frozen-lockfile
+```
+
+The product gate runs these commands:
+
+```bash
+npm run lint
+npm run typecheck
+npm run test
+npm run build
+npm run package
+```
+
+`npm run gate` chains those five in order. Build output goes to `dist/`, packaged archives to `release/`; both are deterministic, so rebuilding an unchanged tree reproduces byte-identical files. Load the unpacked extension in Chromium via `chrome://extensions` with Developer mode enabled, choosing `dist/` as the unpacked directory.
+
+`tests/gate-parity.test.ts` compares this command list with `package.json`, so the two cannot drift apart silently.
 
 ## What a clone needs before you plan a change
 

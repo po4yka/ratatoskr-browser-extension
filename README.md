@@ -2,7 +2,7 @@
 
 `ratatoskr-browser-extension` is the explicit browser capture client for Ratatoskr. It lets a user save the current page, selected text, or a supported social/GitHub URL to their local Ratatoskr deployment without exposing provider passwords, session cookies, or hidden browser APIs.
 
-> **Status:** architecture bootstrap. No extension manifest, background worker, popup UI, content script, or API client is implemented yet.
+> **Status:** scaffold. A TypeScript Manifest V3 project exists with stubbed service-worker, popup, and options surfaces, lint/typecheck/test/build tooling, a strict extension-pages CSP, deterministic zip packaging with a byte-stability test, and a CI gate. No capture logic, content script, local queue, device pairing, or Platform API client is implemented yet.
 
 > [!IMPORTANT]
 > **Ratatoskr is in development.** No database holds data that has to survive a schema change.
@@ -287,4 +287,4 @@ and workspace Compose profile do not exist yet.
 
 ## Project status
 
-This README defines the intended explicit browser-capture client. No extension application, manifest, API client, queue, or UI exists yet.
+This README defines the intended explicit browser-capture client. The first scaffold exists today: manifest, stubbed surfaces, toolchain, deterministic packaging, and CI (see `DEVELOPMENT.md` for the exact commands). Everything capture-related — active-tab access, context menus, selection handling, queueing, pairing, submission — is still to come.

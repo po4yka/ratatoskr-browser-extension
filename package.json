@@ -1,0 +1,30 @@
+{
+  "name": "ratatoskr-browser-extension",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Explicit browser capture client for Ratatoskr (Manifest V3).",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "build": "node scripts/build.mjs",
+    "package": "npm run build && node scripts/package.mjs",
+    "gate": "npm run lint && npm run typecheck && npm run test && npm run build && npm run package"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/chrome": "^0.2.7",
+    "@types/node": "^26.3.0",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.9.1",
+    "fflate": "^0.8.3",
+    "globals": "^17.11.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.68.0",
+    "vitest": "^4.1.11"
+  }
+}
