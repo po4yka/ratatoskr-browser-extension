@@ -3,7 +3,7 @@
   "name": "Ratatoskr",
   "description": "Save the current page, selection, or a supported social/GitHub URL to your Ratatoskr.",
   "version": "0.1.0",
-  "permissions": ["activeTab", "contextMenus"],
+  "permissions": ["activeTab", "contextMenus", "storage"],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
   },

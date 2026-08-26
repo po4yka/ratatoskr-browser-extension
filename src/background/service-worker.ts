@@ -1,4 +1,10 @@
 import { registerCaptureContextMenus, type ContextMenusApi, type MenuClickInfo } from './context-menu';
+import { handleWorkerMessage } from '../protocol/messages';
+
+chrome.runtime.onMessage.addListener((...args) => {
+  const [message, sender, sendResponse] = args;
+  sendResponse(handleWorkerMessage(message, { extensionId: chrome.runtime.id, sender }));
+});
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.removeAll(() => {

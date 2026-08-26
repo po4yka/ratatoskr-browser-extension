@@ -7,6 +7,7 @@ import {
   type DraftState,
   type TabContext,
 } from '../capture/draft';
+import { assertNever, createPopupStageMessage, decodePopupReply } from '../protocol/messages';
 
 interface PopupElements {
   readonly form: HTMLFormElement;
@@ -24,11 +25,32 @@ const elements = popupElements();
 if (elements !== undefined) {
   elements.form.addEventListener('submit', (event) => {
     event.preventDefault();
-    if (state !== undefined) {
-      render(stageDraft(state));
-    }
+    void stageCurrentDraft();
   });
   void loadActiveTab();
+}
+
+async function stageCurrentDraft(): Promise<void> {
+  if (state === undefined || state.status !== 'ready') {
+    return;
+  }
+
+  const readyState = state;
+  try {
+    const reply = decodePopupReply(await chrome.runtime.sendMessage(createPopupStageMessage(readyState.draft)));
+    switch (reply.type) {
+      case 'capture-draft.staged':
+        render(stageDraft(readyState));
+        return;
+      case 'protocol.error':
+        render(markDraftError('Capture staging is unavailable.'));
+        return;
+      default:
+        return assertNever(reply);
+    }
+  } catch {
+    render(markDraftError('Capture staging is unavailable.'));
+  }
 }
 
 async function loadActiveTab(): Promise<void> {

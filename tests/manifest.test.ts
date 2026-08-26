@@ -15,9 +15,9 @@ describe('manifest baseline', () => {
     expect((manifest['version'] as string).length).toBeGreaterThan(0);
   });
 
-  it('requests only the active tab and explicit context-menu capability', () => {
+  it('requests only the reviewed active-tab, context-menu, and storage capabilities', () => {
     const manifest = loadManifest();
-    expect(manifest['permissions']).toEqual(['activeTab', 'contextMenus']);
+    expect(manifest['permissions']).toEqual(['activeTab', 'contextMenus', 'storage']);
     expect(manifest['host_permissions'] ?? []).toEqual([]);
     expect(manifest['optional_permissions'] ?? []).toEqual([]);
   });

@@ -213,6 +213,8 @@ Expected principles:
 - no remotely hosted executable code.
 
 Every permission must be documented in the store listing and in the repository.
+The currently audited manifest baseline and excluded grants are in
+[docs/PERMISSIONS.md](docs/PERMISSIONS.md).
 
 ## Privacy and security invariants
 
