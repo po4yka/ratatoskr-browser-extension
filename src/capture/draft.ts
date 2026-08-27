@@ -1,5 +1,13 @@
 export type CaptureEntryPoint = 'popup' | 'page-menu' | 'link-menu' | 'selection-menu';
 export type CaptureKind = 'page' | 'link' | 'selection';
+export type SocialCaptureProvider = 'x' | 'instagram' | 'threads';
+
+export interface SocialCaptureProvenance {
+  readonly acquisition: 'browser_extension';
+  readonly capturedAt: string;
+  readonly provider: SocialCaptureProvider;
+  readonly savedAuthority: 'explicit_user_capture';
+}
 
 export interface TabContext {
   readonly title?: string;
@@ -32,6 +40,7 @@ export interface CaptureDraft {
   readonly title: string;
   readonly url: string;
   readonly selectionText?: string;
+  readonly social?: SocialCaptureProvenance;
 }
 
 export type DraftState =
@@ -39,6 +48,16 @@ export type DraftState =
   | { readonly message: string; readonly status: 'error' };
 
 export class CaptureDraftError extends Error {}
+
+const socialRoutes: readonly {
+  readonly hosts: ReadonlySet<string>;
+  readonly path: RegExp;
+  readonly provider: SocialCaptureProvider;
+}[] = [
+  { hosts: new Set(['x.com', 'www.x.com', 'mobile.x.com']), path: /^\/[A-Za-z0-9_]{1,15}\/status\/\d{1,20}\/?$/, provider: 'x' },
+  { hosts: new Set(['instagram.com', 'www.instagram.com']), path: /^\/(?:p|reel)\/[A-Za-z0-9_-]+\/?$/, provider: 'instagram' },
+  { hosts: new Set(['threads.net', 'www.threads.net']), path: /^\/@[A-Za-z0-9._]{1,64}\/post\/[A-Za-z0-9_-]+\/?$/, provider: 'threads' },
+];
 
 export function createDraft(input: CaptureDraftInput): CaptureDraft {
   const sourcePageUrl = requireHttpUrl(input.tab.url, 'The active page cannot be captured.');
@@ -51,6 +70,7 @@ export function createDraft(input: CaptureDraftInput): CaptureDraft {
       sourcePageUrl,
       title,
       url: requireHttpUrl(input.linkUrl, 'The selected link cannot be captured.'),
+      ...socialCapture(input.linkUrl),
     };
   }
 
@@ -66,6 +86,7 @@ export function createDraft(input: CaptureDraftInput): CaptureDraft {
       sourcePageUrl,
       title,
       url: sourcePageUrl,
+      ...socialCapture(sourcePageUrl),
     };
   }
 
@@ -75,7 +96,27 @@ export function createDraft(input: CaptureDraftInput): CaptureDraft {
     sourcePageUrl,
     title,
     url: sourcePageUrl,
+    ...socialCapture(sourcePageUrl),
   };
+}
+
+/**
+ * Identifies only public post permalinks that the owning social service has agreed to receive.
+ * The input string is never normalized or rewritten: Platform owns canonicalization.
+ */
+export function classifySocialCapture(value: string): { readonly provider: SocialCaptureProvider } | undefined {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return undefined;
+  }
+  if (url.protocol !== 'https:') {
+    return undefined;
+  }
+  const route = socialRoutes.find((candidate) => candidate.hosts.has(url.hostname.toLowerCase())
+    && candidate.path.test(url.pathname));
+  return route === undefined ? undefined : { provider: route.provider };
 }
 
 export function createReadyState(draft: CaptureDraft): DraftState {
@@ -118,4 +159,18 @@ function requireHttpUrl(value: string | undefined, message: string): string {
   } catch {
     throw new CaptureDraftError(message);
   }
+}
+
+function socialCapture(url: string): { readonly social: SocialCaptureProvenance } | Record<never, never> {
+  const route = classifySocialCapture(url);
+  return route === undefined
+    ? {}
+    : {
+      social: {
+        acquisition: 'browser_extension',
+        capturedAt: new Date().toISOString().replace(/\.000Z$/, 'Z'),
+        provider: route.provider,
+        savedAuthority: 'explicit_user_capture',
+      },
+    };
 }

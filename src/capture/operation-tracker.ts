@@ -100,9 +100,31 @@ function isTrackedOperation(value: unknown): value is TrackedOperation {
 }
 
 function isSnapshot(value: unknown): value is OperationSnapshot {
-  return isRecord(value) && typeof value.operationId === 'string' && isStatus(value.status)
-    && typeof value.retryable === 'boolean' && typeof value.statusChangedAt === 'string'
-    && Array.isArray(value.results) && Array.isArray(value.warnings);
+  return isRecord(value) && hasSnapshotHeader(value) && hasSnapshotCollections(value)
+    && isOptionalSocialOutcome(value.socialOutcome);
+}
+
+function hasSnapshotHeader(value: Record<string, unknown>): boolean {
+  return [
+    typeof value.operationId === 'string',
+    isStatus(value.status),
+    typeof value.retryable === 'boolean',
+    typeof value.statusChangedAt === 'string',
+  ].every(Boolean);
+}
+
+function hasSnapshotCollections(value: Record<string, unknown>): boolean {
+  return [Array.isArray(value.results), Array.isArray(value.warnings)].every(Boolean);
+}
+
+function isOptionalSocialOutcome(value: unknown): boolean {
+  return value === undefined || isSocialOutcome(value);
+}
+
+function isSocialOutcome(value: unknown): boolean {
+  return isRecord(value) && ((value.kind === 'unavailable'
+    && (value.reason === 'deleted' || value.reason === 'unavailable'))
+    || (value.kind === 'partial' && value.preservedPost === true && value.linkedArticle === 'extraction_failed'));
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

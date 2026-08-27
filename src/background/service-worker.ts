@@ -108,7 +108,11 @@ function queueUnavailable(): { readonly code: 'queue-unavailable'; readonly prot
 
 async function submitCapture(request: SubmitRequest & { readonly accessToken: string }): Promise<SubmitOutcome> {
   try {
-    const accepted = await (await captureClient()).submit({ ...request, url: request.draft.url });
+    const accepted = await (await captureClient()).submit({
+      ...request,
+      ...(request.draft.social === undefined ? {} : { social: request.draft.social }),
+      url: request.draft.url,
+    });
     return { operationId: accepted.operationId, type: 'accepted' };
   } catch (error) {
     if (error instanceof PlatformCaptureError) {
@@ -161,6 +165,7 @@ async function operationStatus(snapshot: Awaited<ReturnType<typeof tracker.items
     ...(snapshot.progressPercent === undefined ? {} : { progressPercent: snapshot.progressPercent }),
     ...(readerLink === undefined ? {} : { readerLink }),
     retryable: snapshot.retryable,
+    ...(snapshot.socialOutcome === undefined ? {} : { socialOutcome: snapshot.socialOutcome }),
     ...(snapshot.stage === undefined ? {} : { stage: snapshot.stage }),
     status: snapshot.status,
     ...(snapshot.warnings.length === 0 ? {} : { warningCount: snapshot.warnings.length }),

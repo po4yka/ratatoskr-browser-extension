@@ -141,15 +141,26 @@ For authenticated or private pages, the extension does not transmit the browser 
 
 ## Social capture semantics
 
-Instagram and Threads captures represent explicit local saves:
+The extension recognizes only public X post, Instagram post/reel, and Threads post permalinks. It
+preserves the URL exactly as the user captured it and submits it to Platform with the capture
+instant and this fixed provenance:
 
 ```text
-saved_authority = ExplicitUserCapture
+provider = x | instagram | threads
+acquisition = browser_extension
+saved_authority = explicit_user_capture
 ```
 
-They are not labeled as authoritative copies of native Saved state.
+Platform routes that command to the owning social service rather than generic article extraction.
+Profiles, lookalike hosts, and unsupported provider paths remain generic captures. The extension
+does not read provider cookies, storage, DOM, hidden APIs, or native Saved/bookmark state.
 
 For X, the official connector remains authoritative for bookmark synchronization. An explicit extension capture can coexist with a native X bookmark but preserves its own provenance.
+
+An unavailable or deleted source is rendered as unavailable, never as completed. A partial result
+can say that the social post was preserved while linked-article extraction failed; it is labelled
+partial and has no document reader link. Retry remains available only when Platform marks the
+terminal outcome retryable.
 
 ## GitHub repository workflow
 
@@ -255,6 +266,10 @@ Progress is obtained from the public Platform operation API. The extension does 
 from network timing or communicate directly with internal workers. A reader link is offered only for
 a succeeded `content.document` result with a valid document reference; a retry is offered only when
 Platform marks a terminal unsuccessful operation retryable.
+
+Social outcome codes are closed at the API boundary: `social.source.unavailable`,
+`social.source.deleted`, and `social.linked_article.extraction_failed`. Unknown warning text remains
+generic and cannot make the popup claim a post was preserved or deleted.
 
 ## Observability and diagnostics
 

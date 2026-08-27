@@ -1,10 +1,17 @@
+import type { SocialCaptureProvenance } from './draft';
+
 export type OperationStatus = 'accepted' | 'queued' | 'running' | 'succeeded' | 'partially_succeeded' | 'failed' | 'cancelled';
+
+export type SocialOutcome =
+  | { readonly kind: 'unavailable'; readonly reason: 'deleted' | 'unavailable' }
+  | { readonly kind: 'partial'; readonly linkedArticle: 'extraction_failed'; readonly preservedPost: true };
 
 export interface OperationSnapshot {
   readonly operationId: string;
   readonly progressPercent?: number;
   readonly results: readonly OperationResult[];
   readonly retryable: boolean;
+  readonly socialOutcome?: SocialOutcome;
   readonly stage?: string;
   readonly status: OperationStatus;
   readonly statusChangedAt: string;
@@ -24,6 +31,7 @@ export interface PlatformCaptureClient {
 export interface CaptureSubmission {
   readonly accessToken: string;
   readonly idempotencyKey: string;
+  readonly social?: SocialCaptureProvenance;
   readonly url: string;
 }
 
@@ -48,7 +56,21 @@ export function createPlatformCaptureClient(options: { readonly endpoint: string
 async function submit(options: { readonly endpoint: string; readonly fetch: typeof fetch }, request: CaptureSubmission): Promise<{ readonly operationId: string }> {
   const response = await requestPlatform(options, {
     accessToken: request.accessToken,
-    init: { body: JSON.stringify({ url: request.url }), headers: { 'idempotency-key': request.idempotencyKey }, method: 'POST' },
+    init: {
+      body: JSON.stringify({
+        ...(request.social === undefined ? {} : {
+          social: {
+            acquisition: request.social.acquisition,
+            captured_at: request.social.capturedAt,
+            provider: request.social.provider,
+            saved_authority: request.social.savedAuthority,
+          },
+        }),
+        url: request.url,
+      }),
+      headers: { 'idempotency-key': request.idempotencyKey },
+      method: 'POST',
+    },
     path: '/v1/captures',
   });
   const body: unknown = await response.json();
@@ -88,15 +110,18 @@ function isSnapshot(value: unknown): value is Record<string, unknown> {
 }
 
 function toSnapshot(value: Record<string, unknown>): OperationSnapshot {
+  const snapshotResults = results(value.results);
+  const snapshotWarnings = warnings(value.warnings);
   return {
     operationId: value.operation_id as string,
     ...(isNumber(value.progress_percent) ? { progressPercent: value.progress_percent } : {}),
-    results: results(value.results),
+    results: snapshotResults,
     retryable: value.retryable as boolean,
+    ...socialOutcome({ results: snapshotResults, status: value.status as OperationStatus, warnings: snapshotWarnings }),
     ...(isString(value.stage) ? { stage: value.stage } : {}),
     status: value.status as OperationStatus,
     statusChangedAt: value.status_changed_at as string,
-    warnings: warnings(value.warnings),
+    warnings: snapshotWarnings,
   };
 }
 
@@ -106,6 +131,33 @@ function results(value: unknown): readonly OperationResult[] {
 
 function warnings(value: unknown): readonly string[] {
   return Array.isArray(value) ? value.flatMap((warning) => isString(warning) ? [warning] : isRecord(warning) && isString(warning.code) ? [warning.code] : []) : [];
+}
+
+function socialOutcome(snapshot: {
+  readonly results: readonly OperationResult[];
+  readonly status: OperationStatus;
+  readonly warnings: readonly string[];
+}): { readonly socialOutcome: SocialOutcome } | Record<never, never> {
+  if (snapshot.status === 'failed') {
+    if (snapshot.warnings.includes('social.source.deleted')) {
+      return { socialOutcome: { kind: 'unavailable', reason: 'deleted' } };
+    }
+    if (snapshot.warnings.includes('social.source.unavailable')) {
+      return { socialOutcome: { kind: 'unavailable', reason: 'unavailable' } };
+    }
+  }
+  if (snapshot.status === 'partially_succeeded'
+    && snapshot.results.some((result) => result.resultKind === 'social.post')
+    && snapshot.warnings.includes('social.linked_article.extraction_failed')) {
+    return {
+      socialOutcome: {
+        kind: 'partial',
+        linkedArticle: 'extraction_failed',
+        preservedPost: true,
+      },
+    };
+  }
+  return {};
 }
 
 function failure(status: number): PlatformCaptureError {

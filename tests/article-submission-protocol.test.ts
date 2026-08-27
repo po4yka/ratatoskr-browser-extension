@@ -48,4 +48,25 @@ describe('article submission protocol', () => {
     expect(reply).toEqual({ captureId: 'capture-1', mode: 'tracked', protocolVersion: 1, status: 'queued', type: 'capture.queued' });
     expect(JSON.stringify(reply)).not.toContain('Private title');
   });
+
+  it('queues a recognized social draft without allowing page content into the reply', async () => {
+    const { createPopupSubmitMessage, handleArticleSubmissionMessage } = await loadApi();
+    const socialDraft = {
+      ...draft,
+      social: {
+        acquisition: 'browser_extension' as const,
+        capturedAt: '2026-08-27T10:00:00Z',
+        provider: 'x' as const,
+        savedAuthority: 'explicit_user_capture' as const,
+      },
+      url: 'https://x.com/ratatoskr/status/1234567890123456789',
+    };
+    const reply = await handleArticleSubmissionMessage(createPopupSubmitMessage(socialDraft, 'tracked'), {
+      context: { extensionId: 'extension-1', sender: { id: 'extension-1' } },
+      queue: { enqueue: async () => ({ id: 'capture-social-1', status: 'queued' }) },
+    });
+
+    expect(reply).toEqual({ captureId: 'capture-social-1', mode: 'tracked', protocolVersion: 1, status: 'queued', type: 'capture.queued' });
+    expect(JSON.stringify(reply)).not.toContain('status/1234567890123456789');
+  });
 });

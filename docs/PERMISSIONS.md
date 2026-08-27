@@ -10,7 +10,7 @@ user-visible capability and explains why `activeTab` or an explicit action is in
 | `alarms` | 4, 6 | Wakes retry delivery only for an explicit, locally retained capture after its persisted backoff delay. | MV3 workers cannot retain timers across suspension; it schedules no page monitoring, provider work, or browser-wide polling. |
 | `contextMenus` | 2 | Offers explicit page, link, and selection save actions. | It is limited to the three shipped user-initiated menu entries. |
 | `storage` | 4, 5, 6, 9 | Persists the local queue, registered-device state, bounded operation status, and user settings. | Extension-local storage is the narrow browser capability for durable MV3 state; it grants no page or host access. |
-| `optional_host_permissions` | 5, 6 | Lets an explicit pairing action and its queued capture reach the user-entered Ratatoskr HTTPS origin. | The manifest declares HTTPS only; the options page requests only that exact origin, never persistent page access. |
+| `optional_host_permissions` | 5, 6, 7 | Lets an explicit pairing action and its queued generic or social capture reach the user-entered Ratatoskr HTTPS origin. | The manifest declares HTTPS only; the options page requests only that exact origin, never persistent page access or provider host access. |
 
 ## Not requested in this milestone
 

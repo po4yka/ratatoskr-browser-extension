@@ -1,4 +1,4 @@
-import type { CaptureDraft } from '../capture/draft';
+import { classifySocialCapture, type CaptureDraft } from '../capture/draft';
 import type { ContentContext, ContentContextMessage, PopupStageDraftMessage, ProtocolError } from './messages';
 
 export type UnknownRecord = Record<string, unknown>;
@@ -17,10 +17,10 @@ export function hasAllowedKeys(record: UnknownRecord, keys: readonly string[]): 
 }
 
 export function isCaptureDraft(value: unknown): value is CaptureDraft {
-  if (!isRecord(value) || !hasAllowedKeys(value, ['captureKind', 'entryPoint', 'selectionText', 'sourcePageUrl', 'title', 'url'])) {
+  if (!isRecord(value) || !hasAllowedKeys(value, ['captureKind', 'entryPoint', 'selectionText', 'social', 'sourcePageUrl', 'title', 'url'])) {
     return false;
   }
-  return hasValidDraftKind(value) && hasValidDraftStrings(value);
+  return hasValidDraftKind(value) && hasValidDraftStrings(value) && hasValidDraftSocial(value);
 }
 
 export function isContentContext(value: unknown): value is ContentContext {
@@ -55,6 +55,25 @@ function hasValidDraftStrings(value: UnknownRecord): boolean {
     && isString(value.title)
     && isString(value.url)
     && (value.selectionText === undefined || isString(value.selectionText));
+}
+
+function hasValidDraftSocial(value: UnknownRecord): boolean {
+  if (value.social === undefined) return true;
+  if (!isRecord(value.social)
+    || !hasOnlyKeys(value.social, ['acquisition', 'capturedAt', 'provider', 'savedAuthority'])) {
+    return false;
+  }
+  const route = classifySocialCapture(value.url as string);
+  return route?.provider === value.social.provider
+    && value.social.acquisition === 'browser_extension'
+    && value.social.savedAuthority === 'explicit_user_capture'
+    && isCanonicalTimestamp(value.social.capturedAt);
+}
+
+function isCanonicalTimestamp(value: unknown): boolean {
+  return typeof value === 'string'
+    && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?Z$/.test(value)
+    && !/\.0+Z$/.test(value);
 }
 
 function isOneOf(value: unknown, values: readonly string[]): value is string {

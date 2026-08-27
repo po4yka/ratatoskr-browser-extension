@@ -1,4 +1,5 @@
 import type { DeliveryMode, QueueStatus } from '../queue/types';
+import type { SocialOutcome } from '../capture/platform-client';
 import { PROTOCOL_VERSION, type ProtocolError, type RuntimeSender } from './messages';
 import { hasOnlyKeys, isRecord } from './validation';
 
@@ -21,6 +22,7 @@ export interface CaptureOperationStatus {
   readonly progressPercent?: number;
   readonly readerLink?: string;
   readonly retryable: boolean;
+  readonly socialOutcome?: SocialOutcome;
   readonly stage?: string;
   readonly status: 'accepted' | 'queued' | 'running' | 'succeeded' | 'partially_succeeded' | 'failed' | 'cancelled';
   readonly warningCount?: number;
@@ -76,14 +78,36 @@ function isOperationStatus(value: unknown): value is CaptureOperationStatus {
 }
 
 function hasOperationHeader(value: Record<string, unknown>): boolean {
-  return Object.keys(value).every((key) => ['progressPercent', 'readerLink', 'retryable', 'stage', 'status', 'warningCount'].includes(key))
+  return Object.keys(value).every((key) => ['progressPercent', 'readerLink', 'retryable', 'socialOutcome', 'stage', 'status', 'warningCount'].includes(key))
     && typeof value.retryable === 'boolean' && isOperationState(value.status);
 }
 
 function hasOptionalOperationFields(value: Record<string, unknown>): boolean {
-  return (value.progressPercent === undefined || typeof value.progressPercent === 'number')
-    && (value.readerLink === undefined || typeof value.readerLink === 'string') && (value.stage === undefined || typeof value.stage === 'string')
-    && (value.warningCount === undefined || typeof value.warningCount === 'number');
+  return [
+    optional(value.progressPercent, isNumber),
+    optional(value.readerLink, isString),
+    optional(value.stage, isString),
+    optional(value.warningCount, isNumber),
+    optional(value.socialOutcome, isSocialOutcome),
+  ].every(Boolean);
+}
+
+function optional(value: unknown, validate: (candidate: unknown) => boolean): boolean {
+  return value === undefined || validate(value);
+}
+
+function isNumber(value: unknown): boolean {
+  return typeof value === 'number';
+}
+
+function isString(value: unknown): boolean {
+  return typeof value === 'string';
+}
+
+function isSocialOutcome(value: unknown): value is SocialOutcome {
+  return isRecord(value) && ((value.kind === 'unavailable'
+    && (value.reason === 'deleted' || value.reason === 'unavailable'))
+    || (value.kind === 'partial' && value.preservedPost === true && value.linkedArticle === 'extraction_failed'));
 }
 
 function isQueueStatus(value: unknown): value is QueueStatus {
