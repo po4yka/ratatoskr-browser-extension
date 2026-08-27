@@ -15,10 +15,11 @@ describe('manifest baseline', () => {
     expect((manifest['version'] as string).length).toBeGreaterThan(0);
   });
 
-  it('requests only the reviewed active-tab, alarms, context-menu, and storage capabilities', () => {
+  it('requests only reviewed extension capabilities and optional HTTPS endpoint access', () => {
     const manifest = loadManifest();
     expect(manifest['permissions']).toEqual(['activeTab', 'alarms', 'contextMenus', 'storage']);
     expect(manifest['host_permissions'] ?? []).toEqual([]);
+    expect(manifest['optional_host_permissions']).toEqual(['https://*/*']);
     expect(manifest['optional_permissions'] ?? []).toEqual([]);
   });
 });

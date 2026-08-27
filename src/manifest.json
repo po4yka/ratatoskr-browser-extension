@@ -4,6 +4,7 @@
   "description": "Save the current page, selection, or a supported social/GitHub URL to your Ratatoskr.",
   "version": "0.1.0",
   "permissions": ["activeTab", "alarms", "contextMenus", "storage"],
+  "optional_host_permissions": ["https://*/*"],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
   },

@@ -42,7 +42,7 @@ export function isContentContextMessage(value: unknown): value is ContentContext
 export function isProtocolError(value: unknown): value is ProtocolError {
   return isRecord(value)
     && hasOnlyKeys(value, ['code', 'protocolVersion', 'type'])
-    && isOneOf(value.code, ['invalid-message', 'queue-unavailable', 'unexpected-sender', 'unknown-message', 'unsupported-protocol-version']);
+    && isOneOf(value.code, ['credential-access-denied', 'invalid-message', 'queue-unavailable', 'unexpected-sender', 'unknown-message', 'unsupported-protocol-version']);
 }
 
 function hasValidDraftKind(value: UnknownRecord): boolean {

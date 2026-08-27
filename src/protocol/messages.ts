@@ -38,7 +38,7 @@ export interface ContentContextAccepted {
   readonly type: 'content-context.accepted';
 }
 
-export type ProtocolErrorCode = 'invalid-message' | 'queue-unavailable' | 'unexpected-sender' | 'unknown-message' | 'unsupported-protocol-version';
+export type ProtocolErrorCode = 'credential-access-denied' | 'invalid-message' | 'queue-unavailable' | 'unexpected-sender' | 'unknown-message' | 'unsupported-protocol-version';
 
 export interface ProtocolError {
   readonly code: ProtocolErrorCode;
@@ -128,6 +128,8 @@ function decodeWorkerIncomingMessage(rawMessage: unknown): DecodeResult<WorkerIn
       return isContentContextMessage(header.value.record) ? success(header.value.record) : failure('invalid-message');
     case 'popup.stage-draft':
       return isPopupStageDraftMessage(header.value.record) ? success(header.value.record) : failure('invalid-message');
+    case 'device.credentials.read':
+      return failure('credential-access-denied');
     default:
       return failure('unknown-message');
   }

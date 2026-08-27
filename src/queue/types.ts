@@ -8,7 +8,7 @@ export interface QueueItem {
   readonly idempotencyKey: string;
   readonly nextRetryAt?: number;
   readonly status: QueueStatus;
-  readonly terminalReason?: 'policy' | 'retention-expired' | 'retry-exhausted' | 'validation';
+  readonly terminalReason?: 'authentication-required' | 'policy' | 'retention-expired' | 'retry-exhausted' | 'validation';
 }
 
 export interface StoredQueueItem extends QueueItem {
@@ -41,7 +41,7 @@ export interface QueueLimits {
 export type SubmitOutcome =
   | { readonly type: 'accepted' }
   | { readonly type: 'retryable'; readonly retryAfterMs?: number }
-  | { readonly reason: 'policy' | 'validation'; readonly type: 'terminal' };
+  | { readonly reason: 'authentication-required' | 'policy' | 'validation'; readonly type: 'terminal' };
 
 export interface SubmitRequest {
   readonly draft: CaptureDraft;

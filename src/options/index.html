@@ -8,6 +8,10 @@
     <main>
       <h1>Ratatoskr Options</h1>
       <p aria-live="polite" data-role="status">Starting…</p>
+      <section aria-labelledby="pairing-heading">
+        <h2 id="pairing-heading">Pair device</h2>
+        <form data-role="pairing-form"><label>Endpoint <input data-role="pairing-endpoint" type="url" required></label><label>Pairing code <input data-role="pairing-code" required></label><button type="submit">Pair device</button></form>
+      </section>
       <section aria-labelledby="queue-heading">
         <h2 id="queue-heading">Capture queue</h2>
         <ul data-role="queue-list"></ul>

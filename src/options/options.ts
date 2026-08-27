@@ -5,6 +5,19 @@ const queueList = document.querySelector<HTMLUListElement>('[data-role="queue-li
 const status = document.querySelector<HTMLElement>('[data-role="status"]');
 
 void loadQueue();
+const pairingForm = document.querySelector<HTMLFormElement>('[data-role="pairing-form"]');
+pairingForm?.addEventListener('submit', (event) => { event.preventDefault(); void pair(); });
+
+async function pair(): Promise<void> {
+  const endpoint = document.querySelector<HTMLInputElement>('[data-role="pairing-endpoint"]')?.value ?? '';
+  const code = document.querySelector<HTMLInputElement>('[data-role="pairing-code"]')?.value ?? '';
+  try {
+    const origin = new URL(endpoint).origin;
+    if (new URL(endpoint).protocol !== 'https:' || !await chrome.permissions.request({ origins: [`${origin}/*`] })) throw new Error();
+    await chrome.runtime.sendMessage({ code, endpoint, protocolVersion: 1, type: 'pairing.submit' });
+    showStatus('Pairing request sent.');
+  } catch { showStatus('Pairing requires an approved HTTPS endpoint and code.'); }
+}
 
 async function loadQueue(): Promise<void> {
   try {

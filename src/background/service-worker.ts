@@ -1,10 +1,17 @@
 import { registerCaptureContextMenus, type ContextMenusApi, type MenuClickInfo } from './context-menu';
+import { createChromeCredentialStore } from '../auth/credential-store';
+import { createAuthorizedQueueSubmitter, createCredentialBoundary } from '../auth/authorization';
+import { createPlatformIdentityClient } from '../auth/platform-identity';
 import { ChromeQueueAlarm, registerQueueAlarm } from '../queue/alarm';
 import { createQueue } from '../queue/queue';
 import { ChromeStorageQueueStore } from '../queue/storage';
 import { isQueueInspectionCandidate, handleQueueInspectionMessage } from '../protocol/queue-inspection';
 import { handleWorkerMessage } from '../protocol/messages';
 import { isPopupStageDraftMessage } from '../protocol/validation';
+
+const credentialStore = createChromeCredentialStore();
+void credentialStore.initialize();
+const authorization = createCredentialBoundary({ now: () => Date.now(), refresh: (token, endpoint) => createPlatformIdentityClient({ endpoint, fetch }).refresh(token), store: credentialStore });
 
 const queue = createQueue({
   alarm: new ChromeQueueAlarm(),
@@ -14,7 +21,7 @@ const queue = createQueue({
   now: () => Date.now(),
   random: () => Math.random(),
   store: new ChromeStorageQueueStore(),
-  submit: async () => ({ retryAfterMs: 300_000, type: 'retryable' }),
+  submit: createAuthorizedQueueSubmitter({ authorization, submit: async () => ({ retryAfterMs: 300_000, type: 'retryable' }) }),
 });
 
 registerQueueAlarm(() => queue.processDue());
@@ -25,6 +32,10 @@ chrome.runtime.onMessage.addListener((...args: RuntimeMessageArgs) => handleRunt
 function handleRuntimeMessage(args: RuntimeMessageArgs): boolean {
   const [message, sender, sendResponse] = args;
   const context = { extensionId: chrome.runtime.id, sender };
+  if (isPairingRequest(message, context)) {
+    void pair(message).then(sendResponse).catch(() => sendResponse({ protocolVersion: 1, status: 'pairing-failed', type: 'pairing.status' }));
+    return true;
+  }
   if (isQueueInspectionCandidate(message)) {
     void handleQueueInspectionMessage(message, { context, queue }).then(sendResponse);
     return true;
@@ -36,6 +47,21 @@ function handleRuntimeMessage(args: RuntimeMessageArgs): boolean {
   }
   sendResponse(reply);
   return false;
+}
+
+async function pair(message: { readonly code: string; readonly endpoint: string }): Promise<{ readonly deviceId: string; readonly protocolVersion: 1; readonly status: 'paired'; readonly type: 'pairing.status' }> {
+  const paired = await createPlatformIdentityClient({ endpoint: message.endpoint, fetch }).pair(message.code);
+  await credentialStore.save({ ...paired, endpoint: message.endpoint });
+  return { deviceId: paired.deviceId, protocolVersion: 1, status: 'paired', type: 'pairing.status' };
+}
+
+function isPairingRequest(message: unknown, context: { readonly extensionId: string; readonly sender: chrome.runtime.MessageSender }): message is { readonly code: string; readonly endpoint: string } {
+  return typeof message === 'object' && message !== null
+    && (message as Record<string, unknown>).type === 'pairing.submit'
+    && (message as Record<string, unknown>).protocolVersion === 1
+    && typeof (message as Record<string, unknown>).code === 'string'
+    && typeof (message as Record<string, unknown>).endpoint === 'string'
+    && context.sender.id === context.extensionId && context.sender.tab === undefined;
 }
 
 type RuntimeMessageArgs = [unknown, chrome.runtime.MessageSender, (response?: unknown) => void];

@@ -41,7 +41,7 @@ interface CaptureDraft {
 type SubmitOutcome =
   | { readonly type: 'accepted' }
   | { readonly type: 'retryable' }
-  | { readonly reason: 'policy' | 'validation'; readonly type: 'terminal' };
+  | { readonly reason: 'authentication-required' | 'policy' | 'validation'; readonly type: 'terminal' };
 
 class MemoryQueueStore {
   private snapshot: unknown;
