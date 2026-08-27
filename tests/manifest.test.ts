@@ -6,11 +6,18 @@ function loadManifest(): Record<string, unknown> {
   return JSON.parse(raw) as Record<string, unknown>;
 }
 
+function loadEnglishCatalog(): Record<string, { message: string }> {
+  const raw = readFileSync(new URL('../src/_locales/en/messages.json', import.meta.url), 'utf8');
+  return JSON.parse(raw) as Record<string, { message: string }>;
+}
+
 describe('manifest baseline', () => {
   it('is valid Manifest V3 named for Ratatoskr', () => {
     const manifest = loadManifest();
     expect(manifest['manifest_version']).toBe(3);
-    expect(manifest['name']).toBe('Ratatoskr');
+    expect(manifest['name']).toBe('__MSG_extensionName__');
+    expect(manifest['default_locale']).toBe('en');
+    expect(loadEnglishCatalog()['extensionName']?.message).toBe('Ratatoskr');
     expect(typeof manifest['version']).toBe('string');
     expect((manifest['version'] as string).length).toBeGreaterThan(0);
   });

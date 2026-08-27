@@ -1,69 +1,67 @@
 <!doctype html>
-<html lang="en">
+<html data-i18n-lang lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Ratatoskr</title>
+    <title data-i18n="popupTitle"></title>
+    <link href="../ui/styles.css" rel="stylesheet">
   </head>
   <body>
     <main data-state="ready">
-      <h1>Ratatoskr</h1>
-      <form data-role="capture-form">
+      <h1 data-i18n="extensionName"></h1>
+      <form class="stack" data-role="capture-form">
         <dl>
-          <div>
-            <dt>Page title</dt>
-            <dd><output data-role="draft-title">Loading…</output></dd>
-          </div>
-          <div>
-            <dt>URL</dt>
-            <dd><output data-role="draft-url">Loading…</output></dd>
-          </div>
-          <div>
-            <dt>Selected text</dt>
-            <dd><output data-role="draft-selection">No selected text is available in the popup.</output></dd>
-          </div>
+          <div><dt data-i18n="popupPageTitle"></dt><dd><output data-i18n="popupLoading" data-role="draft-title"></output></dd></div>
+          <div><dt data-i18n="popupUrl"></dt><dd><output data-i18n="popupLoading" data-role="draft-url"></output></dd></div>
+          <div><dt data-i18n="popupSelection"></dt><dd><output data-i18n="popupNoSelection" data-role="draft-selection"></output></dd></div>
         </dl>
-        <button data-action="stage" type="submit">Stage capture</button>
+        <button data-action="stage" data-i18n="popupStage" type="submit"></button>
       </form>
-      <div data-role="save-actions">
-        <button data-action="quick-save" disabled type="button">Quick save</button>
-        <button data-action="tracked-save" disabled type="button">Tracked save</button>
+      <div class="stack" data-role="save-actions">
+        <fieldset data-role="capture-mode">
+          <legend data-i18n="popupModeLegend"></legend>
+          <label for="capture-mode-quick"><input aria-describedby="capture-mode-quick-description" id="capture-mode-quick" name="capture-mode" type="radio" value="quick"><span data-i18n="popupModeQuick"></span></label>
+          <p data-i18n="popupModeQuickDescription" id="capture-mode-quick-description"></p>
+          <label for="capture-mode-tracked"><input aria-describedby="capture-mode-tracked-description" id="capture-mode-tracked" name="capture-mode" type="radio" value="tracked"><span data-i18n="popupModeTracked"></span></label>
+          <p data-i18n="popupModeTrackedDescription" id="capture-mode-tracked-description"></p>
+        </fieldset>
+        <button data-action="save" data-i18n="popupSave" disabled type="button"></button>
       </div>
       <section data-role="github-preview" hidden>
-        <h2>GitHub repository</h2>
-        <p aria-live="polite" data-role="github-availability">Checking GitHub capability…</p>
+        <h2 data-i18n="popupGithubHeading"></h2>
+        <p aria-live="polite" data-i18n="popupGithubChecking" data-role="github-availability"></p>
         <dl>
-          <div><dt>Repository</dt><dd><output data-role="github-full-name">Unavailable</output></dd></div>
-          <div><dt>Description</dt><dd><output data-role="github-description">Not provided</output></dd></div>
-          <div><dt>Stars</dt><dd><output data-role="github-stars">Unavailable</output></dd></div>
-          <div><dt>Primary language</dt><dd><output data-role="github-language">Not provided</output></dd></div>
+          <div><dt data-i18n="popupGithubRepository"></dt><dd><output data-i18n="commonUnavailable" data-role="github-full-name"></output></dd></div>
+          <div><dt data-i18n="popupGithubDescription"></dt><dd><output data-i18n="commonNotProvided" data-role="github-description"></output></dd></div>
+          <div><dt data-i18n="popupGithubStars"></dt><dd><output data-i18n="commonUnavailable" data-role="github-stars"></output></dd></div>
+          <div><dt data-i18n="popupGithubLanguage"></dt><dd><output data-i18n="commonNotProvided" data-role="github-language"></output></dd></div>
         </dl>
-        <div data-role="github-actions">
-          <button data-action="github-metadata" disabled hidden type="button">Add metadata</button>
-          <button data-action="github-track" disabled hidden type="button">Track for backup</button>
-          <button data-action="github-star" disabled hidden type="button">Star on GitHub</button>
+        <div class="actions" data-role="github-actions">
+          <button data-action="github-metadata" data-i18n="popupGithubAddMetadata" disabled hidden type="button"></button>
+          <button data-action="github-track" data-i18n="popupGithubTrack" disabled hidden type="button"></button>
+          <button data-action="github-star" data-i18n="popupGithubStar" disabled hidden type="button"></button>
         </div>
-        <ul aria-label="GitHub action results" data-role="github-results"></ul>
+        <ul data-i18n-aria-label="popupGithubResultsLabel" data-role="github-results"></ul>
       </section>
-      <dialog data-role="github-track-confirmation">
-        <h2>Confirm backup tracking</h2>
-        <p>Request backup tracking for <output data-role="github-track-target"></output>?</p>
-        <button data-action="github-track-confirm" type="button">Confirm track</button>
-        <button data-action="github-track-cancel" type="button">Cancel</button>
+      <dialog aria-labelledby="github-track-confirmation-title" data-role="github-track-confirmation">
+        <h2 data-i18n="popupGithubTrackDialogTitle" id="github-track-confirmation-title"></h2>
+        <p><span data-i18n="popupGithubTrackDialogText"></span> <output data-role="github-track-target"></output></p>
+        <button data-action="github-track-confirm" data-i18n="popupGithubTrackConfirm" type="button"></button>
+        <button data-action="github-track-cancel" data-i18n="commonCancel" type="button"></button>
       </dialog>
-      <dialog data-role="github-star-confirmation">
-        <h2>Confirm GitHub star</h2>
-        <p>Star <output data-role="github-star-target"></output> using <output data-role="github-star-account"></output>?</p>
-        <p>This writes to your connected GitHub account.</p>
-        <button data-action="github-star-confirm" type="button">Confirm external write</button>
-        <button data-action="github-star-cancel" type="button">Cancel</button>
+      <dialog aria-labelledby="github-star-confirmation-title" data-role="github-star-confirmation">
+        <h2 data-i18n="popupGithubStarDialogTitle" id="github-star-confirmation-title"></h2>
+        <p><span data-i18n="popupGithubStarDialogText"></span> <output data-role="github-star-target"></output> <output data-role="github-star-account"></output></p>
+        <p data-i18n="popupGithubStarExternal"></p>
+        <button data-action="github-star-confirm" data-i18n="popupGithubStarConfirm" type="button"></button>
+        <button data-action="github-star-cancel" data-i18n="commonCancel" type="button"></button>
       </dialog>
       <section data-role="operation-panel" hidden>
-        <h2>Tracked save</h2>
-        <output data-role="operation-progress">Waiting for Platform acceptance…</output>
-        <a data-action="open-reader" hidden rel="noreferrer" target="_blank">Open reader</a>
-        <button data-action="retry" hidden type="button">Retry save</button>
+        <h2 data-i18n="popupOperationHeading"></h2>
+        <output aria-live="polite" data-i18n="popupOperationWaiting" data-role="operation-progress"></output>
+        <a data-action="open-reader" data-i18n="popupOpenReader" hidden rel="noreferrer" target="_blank"></a>
+        <button data-action="retry" data-i18n="popupRetry" hidden type="button"></button>
       </section>
-      <p aria-live="polite" data-role="status">Loading the active page…</p>
+      <p aria-live="polite" data-i18n="popupStatusLoading" data-role="status"></p>
     </main>
     <script src="./popup.js"></script>
   </body>

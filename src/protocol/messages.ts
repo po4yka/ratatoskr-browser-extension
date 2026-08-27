@@ -52,6 +52,7 @@ export type ContentScriptReply = ContentContextMessage | ProtocolError;
 export interface RuntimeSender {
   readonly id?: string | undefined;
   readonly tab?: { readonly id?: number | undefined } | undefined;
+  readonly url?: string | undefined;
 }
 
 export function createPopupStageMessage(draft: CaptureDraft): PopupStageDraftMessage {

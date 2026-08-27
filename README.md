@@ -3,9 +3,9 @@
 `ratatoskr-browser-extension` is the explicit browser capture client for Ratatoskr. It lets a user save the current page, selected text, or a supported social/GitHub URL to their local Ratatoskr deployment without exposing provider passwords, session cookies, or hidden browser APIs.
 
 > **Status:** active implementation. The TypeScript Manifest V3 client has explicit draft capture,
-> a bounded durable queue, device pairing, generic/social submission, operation tracking, and the
-> capability-gated GitHub repository flow described below. Release hardening and cross-browser
-> packaging remain later implementation-plan items.
+> a bounded durable queue, device pairing and revocation, generic/social submission, operation
+> tracking, a privacy-preserving options surface, and the capability-gated GitHub repository flow
+> described below. Cross-browser release packaging remains a later implementation-plan item.
 
 > [!IMPORTANT]
 > **Ratatoskr is in development.** No database holds data that has to survive a schema change.
@@ -206,14 +206,16 @@ it never means that backup storage completed or was verified.
 
 ## Authentication
 
-The extension registers as a Ratatoskr device through Platform. Planned behavior:
+The extension registers as a Ratatoskr device through Platform. Current behavior:
 
 - initial pairing with the user's local Ratatoskr instance;
 - short-lived access token;
 - secure refresh or re-pairing policy;
 - token storage in browser extension storage appropriate to the threat model;
 - endpoint allowlist and TLS status display;
-- explicit revoke from Ratatoskr account settings.
+- explicit revoke from the extension options page. Revocation targets only the paired device at
+  the paired HTTPS origin and clears the local credential only after Platform confirms revocation
+  or reports the credential already unauthorized.
 
 Provider tokens are never delivered to the extension.
 
@@ -309,6 +311,23 @@ API compatibility status
 ```
 
 A diagnostic export redacts tokens, notes, selected text, private URLs, and user content by default.
+It is built from an allowlist of version, browser, pairing, queue-count, and coarse operation-state
+fields rather than by filtering a state dump. A support-session switch can add only visibly labeled
+endpoint and queued-item URL fields; the switch is memory-only, resets when the options page closes,
+and still never exports credentials, titles, selections, notes, tags, or raw backend errors.
+
+## Options, privacy, accessibility, and localization
+
+The options page stores the default quick/tracked capture mode without starting a capture, shows a
+safe queue inspector and non-secret paired-device information, and provides paired-device revoke and
+clear-all-data controls. Both destructive actions require two named confirmations. Clear-all revokes
+the paired device first and reports incomplete cleanup unless local/session/sync storage, queue retry
+alarms, the exact optional Platform origin, and volatile support state are all removed.
+
+Popup and options controls use semantic landmarks, heading order, fieldsets, named dialogs, live
+regions, visible keyboard focus, focus restoration, and reduced-motion styling. User-visible strings
+and manifest metadata resolve through the WebExtension `_locales/en/messages.json` source catalog;
+the packaging path copies that catalog deterministically and is ready for future locale catalogs.
 
 ## Non-goals
 
@@ -331,7 +350,8 @@ A diagnostic export redacts tokens, notes, selected text, private URLs, and user
 6. Add GitHub repository mode selection.
 7. Add explicit X, Instagram, and Threads URL recognition.
 8. Add compatibility checks and end-to-end tests against local Platform.
-9. Harden permissions, diagnostics, update, and store-release workflows.
+9. Add options, revoke/clear-data, redacted diagnostics, accessibility, and localization readiness.
+10. Add cross-browser packaging, release signing, and workspace integration.
 
 ## Workspace integration
 
@@ -341,6 +361,5 @@ and workspace Compose profile do not exist yet.
 
 ## Project status
 
-Implementation-plan items 1–8 now have code and focused tests. The exact local product gate remains
-documented in `DEVELOPMENT.md`; options/revoke/diagnostics polish and cross-browser release work are
-still pending.
+Implementation-plan items 1–9 now have code and focused tests. The exact local product gate remains
+documented in `DEVELOPMENT.md`; cross-browser release work is still pending.

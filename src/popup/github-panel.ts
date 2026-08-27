@@ -1,5 +1,5 @@
 import type { CaptureDraft } from '../capture/draft';
-import { projectGithubActionResult } from '../github/action-result';
+import { projectGithubActionResult, type RepositoryActionPresentation } from '../github/action-result';
 import { createGithubActionFlow, type ConfirmationSelection, type GitHubActionIntent } from '../github/confirmation';
 import type { GitHubRepositoryPreview, RepositoryActionMode } from '../github/preview';
 import {
@@ -8,6 +8,8 @@ import {
   decodeGithubActionReply,
   decodeGithubPreviewReply,
 } from '../protocol/github';
+import { message } from '../i18n/messages';
+import { githubAggregateText, githubResultText } from './github-result';
 
 export interface GitHubPanel {
   present(draft: CaptureDraft | undefined, actionable: boolean): void;
@@ -39,6 +41,7 @@ class PopupGitHubPanel implements GitHubPanel {
   private currentPreview: GitHubRepositoryPreview | undefined;
   private currentUrl: string | undefined;
   private pending: ConfirmationSelection | undefined;
+  private dialogInvoker: HTMLButtonElement | undefined;
   private readonly flow = createGithubActionFlow({
     createConfirmationEvidenceRef: () => `browser-extension-confirmation:${crypto.randomUUID()}`,
     createIdempotencyKey: () => `browser-extension-github-action:${crypto.randomUUID()}`,
@@ -46,7 +49,7 @@ class PopupGitHubPanel implements GitHubPanel {
 
   constructor(private readonly elements: GitHubElements) {
     for (const mode of ['metadata', 'track', 'star'] as const) {
-      elements.actions[mode].addEventListener('click', () => this.select(mode));
+      elements.actions[mode].addEventListener('click', () => this.select(mode, elements.actions[mode]));
     }
     bind('[data-action="github-track-confirm"]', () => this.confirm('track'));
     bind('[data-action="github-star-confirm"]', () => this.confirm('star'));
@@ -67,7 +70,7 @@ class PopupGitHubPanel implements GitHubPanel {
     if (repositoryUrl === this.currentUrl) return;
     this.currentUrl = repositoryUrl;
     this.currentPreview = undefined;
-    this.elements.availability.textContent = 'Checking GitHub capability…';
+    this.elements.availability.textContent = message('githubChecking');
     this.updateActions();
     void this.loadPreview(repositoryUrl);
   }
@@ -87,13 +90,14 @@ class PopupGitHubPanel implements GitHubPanel {
     }
   }
 
-  private select(mode: RepositoryActionMode): void {
+  private select(mode: RepositoryActionMode, invoker: HTMLButtonElement): void {
     if (!this.actionable || this.currentPreview === undefined) return;
     const selection = this.flow.select(this.currentPreview, mode);
     if (selection.status === 'ready') {
       void this.submit(selection.intent);
     } else if (selection.status === 'confirmation-required') {
       this.pending = selection;
+      this.dialogInvoker = invoker;
       this.openDialog(selection);
     }
   }
@@ -103,6 +107,7 @@ class PopupGitHubPanel implements GitHubPanel {
     const intent = this.flow.confirm(this.pending, this.currentPreview);
     this.pending = undefined;
     this.elements.dialogs[mode].close();
+    this.restoreDialogFocus();
     if (intent !== undefined) void this.submit(intent);
   }
 
@@ -110,36 +115,37 @@ class PopupGitHubPanel implements GitHubPanel {
     if (this.pending?.mode === mode) this.flow.cancel(this.pending);
     this.pending = undefined;
     this.elements.dialogs[mode].close();
+    this.restoreDialogFocus();
   }
 
   private async submit(intent: GitHubActionIntent): Promise<void> {
-    this.elements.availability.textContent = 'Submitting confirmed GitHub action…';
+    this.elements.availability.textContent = message('githubSubmitting');
     try {
       const reply = decodeGithubActionReply(await chrome.runtime.sendMessage(createGithubActionMessage(intent)));
       if (reply.type !== 'github.repository.action-completed') {
-        this.elements.availability.textContent = 'GitHub action is unavailable.';
+        this.elements.availability.textContent = message('githubActionUnavailable');
         return;
       }
       const presentation = projectGithubActionResult(reply.result);
-      this.elements.availability.textContent = `GitHub action result: ${presentation.aggregate}.`;
+      this.elements.availability.textContent = message('githubActionResult', githubAggregateText(presentation.aggregate));
       this.elements.results.replaceChildren(...presentation.rows.map(resultRow));
     } catch {
-      this.elements.availability.textContent = 'GitHub action is unavailable.';
+      this.elements.availability.textContent = message('githubActionUnavailable');
     }
   }
 
   private renderPreview(preview: GitHubRepositoryPreview): void {
-    this.elements.availability.textContent = 'GitHub repository preview available.';
+    this.elements.availability.textContent = message('githubPreviewAvailable');
     this.elements.fullName.value = preview.target.repositoryFullName;
-    this.elements.description.value = preview.description ?? 'Not provided';
+    this.elements.description.value = preview.description ?? message('commonNotProvided');
     this.elements.stars.value = String(preview.stargazerCount);
-    this.elements.language.value = preview.primaryLanguage ?? 'Not provided';
+    this.elements.language.value = preview.primaryLanguage ?? message('commonNotProvided');
     this.updateActions();
   }
 
   private unavailable(): void {
     this.currentPreview = undefined;
-    this.elements.availability.textContent = 'GitHub actions are unavailable on this Ratatoskr deployment.';
+    this.elements.availability.textContent = message('githubUnavailable');
     this.updateActions();
   }
 
@@ -156,16 +162,22 @@ class PopupGitHubPanel implements GitHubPanel {
     if (selection.mode === 'track') this.elements.trackTarget.value = selection.prompt.repositoryFullName;
     if (selection.mode === 'star') {
       this.elements.starTarget.value = selection.prompt.repositoryFullName;
-      this.elements.account.value = selection.prompt.accountRef ?? 'Unavailable';
+      this.elements.account.value = selection.prompt.accountRef ?? message('commonUnavailable');
     }
     this.elements.dialogs[selection.mode].showModal();
+    this.elements.dialogs[selection.mode].querySelector<HTMLButtonElement>('button')?.focus();
+  }
+
+  private restoreDialogFocus(): void {
+    this.dialogInvoker?.focus();
+    this.dialogInvoker = undefined;
   }
 }
 
-function resultRow(row: { readonly message: string; readonly status: string }): HTMLLIElement {
+function resultRow(row: RepositoryActionPresentation['rows'][number]): HTMLLIElement {
   const item = document.createElement('li');
   item.dataset.status = row.status;
-  item.textContent = row.message;
+  item.textContent = githubResultText(row);
   return item;
 }
 

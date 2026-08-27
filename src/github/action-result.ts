@@ -19,7 +19,7 @@ export interface RepositoryActionPresentation {
   readonly aggregate: RepositoryActionAggregate;
   readonly rows: readonly {
     readonly component: 'metadata' | 'provider_star' | 'desired_backup';
-    readonly message: string;
+    readonly reason?: RepositoryActionReason;
     readonly status: RepositoryActionStatus;
   }[];
 }
@@ -93,20 +93,7 @@ function deriveAggregate(result: Omit<RepositoryActionResult, 'aggregate'>): Rep
 }
 
 function row(componentName: 'metadata' | 'provider_star' | 'desired_backup', outcome: RepositoryComponentOutcome) {
-  return { component: componentName, message: message(componentName, outcome), status: outcome.status };
-}
-
-function message(componentName: 'metadata' | 'provider_star' | 'desired_backup', outcome: RepositoryComponentOutcome): string {
-  if (outcome.status === 'succeeded') return componentName === 'metadata' ? 'Repository metadata added.' : 'GitHub star succeeded.';
-  if (outcome.status === 'already_applied') return `${label(componentName)} was already applied.`;
-  if (outcome.status === 'accepted') return 'Backup policy accepted; backup is not yet verified.';
-  return 'reason' in outcome
-    ? `${label(componentName)} ${outcome.status.replace('_', ' ')}: ${outcome.reason.replaceAll('_', ' ')}.`
-    : `${label(componentName)} returned an invalid result.`;
-}
-
-function label(value: 'metadata' | 'provider_star' | 'desired_backup'): string {
-  return value === 'metadata' ? 'Repository metadata' : value === 'provider_star' ? 'GitHub star' : 'Backup policy';
+  return { component: componentName, ...('reason' in outcome ? { reason: outcome.reason } : {}), status: outcome.status };
 }
 
 function isAggregate(value: unknown): value is RepositoryActionAggregate {

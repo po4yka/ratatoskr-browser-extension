@@ -1,7 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Ratatoskr",
-  "description": "Save the current page, selection, or a supported social/GitHub URL to your Ratatoskr.",
+  "name": "__MSG_extensionName__",
+  "description": "__MSG_extensionDescription__",
+  "default_locale": "en",
   "version": "0.1.0",
   "permissions": ["activeTab", "alarms", "contextMenus", "storage"],
   "optional_host_permissions": ["https://*/*"],
@@ -15,7 +16,7 @@
     "128": "icons/icon-128.png"
   },
   "action": {
-    "default_title": "Ratatoskr",
+    "default_title": "__MSG_extensionName__",
     "default_popup": "popup/index.html"
   },
   "options_ui": {

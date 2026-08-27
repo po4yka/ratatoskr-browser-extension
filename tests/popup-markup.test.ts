@@ -9,13 +9,15 @@ describe('popup markup', () => {
   it('provides keyboard-operable staging, explicit save modes, and a tracked operation panel', () => {
     const markup = loadPopupMarkup();
 
-    expect(markup).toContain('<form data-role="capture-form">');
-    expect(markup).toContain('<output data-role="draft-url">');
-    expect(markup).toContain('<output data-role="draft-title">');
-    expect(markup).toContain('<output data-role="draft-selection">');
-    expect(markup).toContain('<button data-action="stage" type="submit">Stage capture</button>');
-    expect(markup).toContain('<button data-action="quick-save" disabled type="button">Quick save</button>');
-    expect(markup).toContain('<button data-action="tracked-save" disabled type="button">Tracked save</button>');
+    expect(markup).toContain('data-role="capture-form"');
+    expect(markup).toContain('data-role="draft-url"');
+    expect(markup).toContain('data-role="draft-title"');
+    expect(markup).toContain('data-role="draft-selection"');
+    expect(markup).toContain('data-action="stage"');
+    expect(markup).toContain('data-role="capture-mode"');
+    expect(markup).toContain('name="capture-mode" type="radio" value="quick"');
+    expect(markup).toContain('name="capture-mode" type="radio" value="tracked"');
+    expect(markup).toContain('data-action="save"');
     expect(markup).toContain('data-role="operation-panel"');
     expect(markup).toContain('data-action="open-reader"');
     expect(markup).toContain('data-action="retry"');
@@ -32,9 +34,9 @@ describe('popup markup', () => {
     expect(markup).toContain('data-action="github-metadata"');
     expect(markup).toContain('data-action="github-track"');
     expect(markup).toContain('data-action="github-star"');
-    expect(markup).toContain('<dialog data-role="github-track-confirmation"');
-    expect(markup).toContain('<dialog data-role="github-star-confirmation"');
-    expect(markup).toContain('This writes to your connected GitHub account.');
+    expect(markup).toContain('data-role="github-track-confirmation"');
+    expect(markup).toContain('data-role="github-star-confirmation"');
+    expect(markup).toContain('data-i18n="popupGithubStarExternal"');
     expect(markup).toContain('data-role="github-results"');
   });
 });

@@ -1,21 +1,59 @@
 <!doctype html>
-<html lang="en">
+<html data-i18n-lang lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Ratatoskr Options</title>
+    <title data-i18n="optionsTitle"></title>
+    <link href="../ui/styles.css" rel="stylesheet">
   </head>
   <body>
     <main>
-      <h1>Ratatoskr Options</h1>
-      <p aria-live="polite" data-role="status">Starting…</p>
+      <h1 data-i18n="optionsHeading"></h1>
+      <p aria-live="polite" data-i18n="optionsStatusStarting" data-role="status"></p>
+      <section aria-labelledby="preferences-heading">
+        <h2 data-i18n="preferencesHeading" id="preferences-heading"></h2>
+        <form class="stack" data-role="preferences-form">
+          <fieldset><legend data-i18n="preferencesDefaultLegend"></legend>
+            <label for="default-mode-quick"><input id="default-mode-quick" name="default-mode" type="radio" value="quick"><span data-i18n="preferencesQuick"></span></label>
+            <label for="default-mode-tracked"><input id="default-mode-tracked" name="default-mode" type="radio" value="tracked"><span data-i18n="preferencesTracked"></span></label>
+          </fieldset>
+          <button data-i18n="preferencesSave" type="submit"></button>
+        </form>
+      </section>
       <section aria-labelledby="pairing-heading">
-        <h2 id="pairing-heading">Pair device</h2>
-        <form data-role="pairing-form"><label>Endpoint <input data-role="pairing-endpoint" type="url" required></label><label>Pairing code <input data-role="pairing-code" required></label><button type="submit">Pair device</button></form>
+        <h2 data-i18n="pairingHeading" id="pairing-heading"></h2>
+        <form class="stack" data-role="pairing-form">
+          <label data-i18n="pairingEndpointLabel" for="pairing-endpoint"></label>
+          <input aria-describedby="pairing-endpoint-help" data-role="pairing-endpoint" id="pairing-endpoint" type="url" required>
+          <p data-i18n="pairingEndpointHelp" id="pairing-endpoint-help"></p>
+          <label data-i18n="pairingCodeLabel" for="pairing-code"></label>
+          <input aria-describedby="pairing-code-help" autocomplete="off" data-role="pairing-code" id="pairing-code" required>
+          <p data-i18n="pairingCodeHelp" id="pairing-code-help"></p>
+          <button data-i18n="pairingButton" type="submit"></button>
+        </form>
+      </section>
+      <section aria-labelledby="device-heading">
+        <h2 data-i18n="deviceHeading" id="device-heading"></h2>
+        <dl><div><dt data-i18n="deviceStatusLabel"></dt><dd><output data-role="device-status"></output></dd></div>
+          <div><dt data-i18n="deviceEndpointLabel"></dt><dd><output data-role="device-endpoint"></output></dd></div>
+          <div><dt data-i18n="deviceIdLabel"></dt><dd><output data-role="device-id"></output></dd></div></dl>
+        <div class="actions"><button class="danger" data-action="revoke" data-i18n="revokeButton" type="button"></button>
+          <button class="danger" data-action="clear-all" data-i18n="clearButton" type="button"></button></div>
       </section>
       <section aria-labelledby="queue-heading">
-        <h2 id="queue-heading">Capture queue</h2>
-        <ul data-role="queue-list"></ul>
+        <h2 data-i18n="queueHeading" id="queue-heading"></h2>
+        <ul aria-live="polite" data-role="queue-list"></ul>
       </section>
+      <section aria-labelledby="diagnostics-heading">
+        <h2 data-i18n="diagnosticsHeading" id="diagnostics-heading"></h2>
+        <p data-i18n="diagnosticsDescription"></p>
+        <label for="diagnostics-sensitive"><input aria-describedby="diagnostics-sensitive-warning" data-role="diagnostics-sensitive" id="diagnostics-sensitive" type="checkbox"><span data-i18n="diagnosticsSensitiveLabel"></span></label>
+        <p class="warning" data-i18n="diagnosticsSensitiveWarning" id="diagnostics-sensitive-warning"></p>
+        <button data-action="export-diagnostics" data-i18n="diagnosticsExport" type="button"></button>
+      </section>
+      <dialog aria-labelledby="revoke-review-title" data-role="revoke-review"><h2 data-i18n="revokeReviewTitle" id="revoke-review-title"></h2><p data-i18n="revokeReviewText"></p><button data-action="revoke-review-confirm" data-i18n="continueButton" type="button"></button><button data-action="revoke-cancel" data-i18n="commonCancel" type="button"></button></dialog>
+      <dialog aria-labelledby="revoke-final-title" data-role="revoke-final"><h2 data-i18n="revokeFinalTitle" id="revoke-final-title"></h2><p data-i18n="revokeFinalText"></p><button data-action="revoke-final-confirm" data-i18n="revokeConfirmButton" type="button"></button><button data-action="revoke-cancel" data-i18n="commonCancel" type="button"></button></dialog>
+      <dialog aria-labelledby="clear-review-title" data-role="clear-review"><h2 data-i18n="clearReviewTitle" id="clear-review-title"></h2><p data-i18n="clearReviewText"></p><button data-action="clear-review-confirm" data-i18n="continueButton" type="button"></button><button data-action="clear-cancel" data-i18n="commonCancel" type="button"></button></dialog>
+      <dialog aria-labelledby="clear-final-title" data-role="clear-final"><h2 data-i18n="clearFinalTitle" id="clear-final-title"></h2><p data-i18n="clearFinalText"></p><button data-action="clear-final-confirm" data-i18n="clearConfirmButton" type="button"></button><button data-action="clear-cancel" data-i18n="commonCancel" type="button"></button></dialog>
     </main>
     <script src="./options.js"></script>
   </body>

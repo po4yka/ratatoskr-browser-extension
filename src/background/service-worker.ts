@@ -16,6 +16,7 @@ import { handleWorkerMessage } from '../protocol/messages';
 import { isPopupStageDraftMessage } from '../protocol/validation';
 import { createGithubRuntime } from './github-runtime';
 import { browserContextMenus } from './browser-context-menus';
+import { createOptionsRuntime } from './options-runtime';
 
 const credentialStore = createChromeCredentialStore();
 void credentialStore.initialize();
@@ -30,6 +31,7 @@ const githubRuntime = createGithubRuntime({
   fetcher: fetch,
 });
 
+const queueStore = new ChromeStorageQueueStore();
 const queue = createQueue({
   alarm: new ChromeQueueAlarm(),
   createAttemptId: () => crypto.randomUUID(),
@@ -37,9 +39,10 @@ const queue = createQueue({
   createIdempotencyKey: () => crypto.randomUUID(),
   now: () => Date.now(),
   random: () => Math.random(),
-  store: new ChromeStorageQueueStore(),
+  store: queueStore,
   submit: createAuthorizedQueueSubmitter({ authorization, submit: submitCapture }),
 });
+const optionsRuntime = createOptionsRuntime({ credentialStore, fetcher: fetch, operations: () => tracker.items(), queue: () => queue.items(), rawQueue: () => queueStore.load() });
 
 registerQueueAlarm(() => queue.processDue());
 void queue.processDue();
@@ -71,6 +74,10 @@ function handleRuntimeMessage(args: RuntimeMessageArgs): boolean {
   }
   if (githubRuntime.handles(message)) {
     void githubRuntime.handle(message, context).then(sendResponse).catch(() => sendResponse(githubUnavailable()));
+    return true;
+  }
+  if (optionsRuntime.handles(message)) {
+    void optionsRuntime.handle(message, context).then(sendResponse).catch(() => sendResponse(queueUnavailable()));
     return true;
   }
   return respondToWorkerMessage({ context, message, sendResponse });
@@ -106,12 +113,19 @@ async function pair(message: { readonly code: string; readonly endpoint: string 
 }
 
 function isPairingRequest(message: unknown, context: { readonly extensionId: string; readonly sender: chrome.runtime.MessageSender }): message is { readonly code: string; readonly endpoint: string } {
-  return typeof message === 'object' && message !== null
-    && (message as Record<string, unknown>).type === 'pairing.submit'
-    && (message as Record<string, unknown>).protocolVersion === 1
-    && typeof (message as Record<string, unknown>).code === 'string'
-    && typeof (message as Record<string, unknown>).endpoint === 'string'
-    && context.sender.id === context.extensionId && context.sender.tab === undefined;
+  return isPairingMessage(message) && isOptionsSender(context);
+}
+
+function isPairingMessage(message: unknown): message is { readonly code: string; readonly endpoint: string } {
+  if (typeof message !== 'object' || message === null) return false;
+  const record = message as Record<string, unknown>;
+  return record.type === 'pairing.submit' && record.protocolVersion === 1
+    && typeof record.code === 'string' && typeof record.endpoint === 'string';
+}
+
+function isOptionsSender(context: { readonly extensionId: string; readonly sender: chrome.runtime.MessageSender }): boolean {
+  return context.sender.id === context.extensionId && context.sender.tab === undefined
+    && context.sender.url === chrome.runtime.getURL('options/index.html');
 }
 
 type RuntimeMessageArgs = [unknown, chrome.runtime.MessageSender, (response?: unknown) => void];

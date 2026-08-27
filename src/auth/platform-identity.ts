@@ -19,12 +19,24 @@ export class PlatformIdentityError extends Error {
 export function createPlatformIdentityClient(options: { readonly endpoint: string; readonly fetch: typeof fetch }): {
   pair(code: string): Promise<PairedDevice>;
   refresh(refreshToken: string): Promise<RotatedCredentials>;
+  revoke(request: { readonly accessToken: string; readonly deviceId: string }): Promise<'already-unauthorized' | 'revoked'>;
 } {
   const endpoint = httpsOrigin(options.endpoint);
   return {
     pair: async (code) => paired(await request({ body: { code, kind: 'browser_extension' }, expected: 201, fetcher: options.fetch, url: `${endpoint}/v1/devices/pair` })),
     refresh: async (refreshToken) => rotated(await request({ body: { refresh_token: refreshToken }, expected: 200, fetcher: options.fetch, url: `${endpoint}/v1/sessions/refresh` })),
+    revoke: async (revokeRequest) => revoke({ endpoint, fetcher: options.fetch, request: revokeRequest }),
   };
+}
+
+async function revoke(options: { readonly endpoint: string; readonly fetcher: typeof fetch; readonly request: { readonly accessToken: string; readonly deviceId: string } }): Promise<'already-unauthorized' | 'revoked'> {
+  if (!/^[A-Za-z0-9-]{1,128}$/.test(options.request.deviceId)) throw new PlatformIdentityError('identity-unavailable');
+  const response = await options.fetcher(`${options.endpoint}/v1/devices/${options.request.deviceId}`, {
+    headers: { authorization: `Bearer ${options.request.accessToken}` }, method: 'DELETE', redirect: 'error',
+  });
+  if (response.status === 204) return 'revoked';
+  if (response.status === 401) return 'already-unauthorized';
+  throw new PlatformIdentityError('identity-unavailable');
 }
 
 async function request(options: { readonly body: object; readonly expected: number; readonly fetcher: typeof fetch; readonly url: string }): Promise<unknown> {

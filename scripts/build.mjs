@@ -36,5 +36,8 @@ cpSync(join(repoRoot, 'src/manifest.json'), join(outDir, 'manifest.json'));
 cpSync(join(repoRoot, 'src/popup/index.html'), join(outDir, 'popup/index.html'));
 cpSync(join(repoRoot, 'src/options/index.html'), join(outDir, 'options/index.html'));
 cpSync(join(repoRoot, 'assets/icons'), join(outDir, 'icons'), { recursive: true });
+cpSync(join(repoRoot, 'src/_locales'), join(outDir, '_locales'), { recursive: true });
+mkdirSync(join(outDir, 'ui'), { recursive: true });
+cpSync(join(repoRoot, 'src/ui/styles.css'), join(outDir, 'ui/styles.css'));
 
 console.log(`built extension into ${outDir}`);

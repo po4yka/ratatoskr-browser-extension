@@ -90,9 +90,9 @@ describe('GitHub action outcomes', () => {
     expect(projectGithubActionResult?.(result)).toEqual({
       aggregate: 'partial',
       rows: [
-        { component: 'metadata', message: 'Repository metadata added.', status: 'succeeded' },
-        { component: 'provider_star', message: 'GitHub star succeeded.', status: 'succeeded' },
-        { component: 'desired_backup', message: 'Backup policy failed: dependency unavailable.', status: 'failed' },
+        { component: 'metadata', status: 'succeeded' },
+        { component: 'provider_star', status: 'succeeded' },
+        { component: 'desired_backup', reason: 'dependency_unavailable', status: 'failed' },
       ],
     });
 

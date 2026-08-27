@@ -126,11 +126,15 @@ The options UI manages:
 
 - Ratatoskr server pairing;
 - device status/revocation;
-- default collection/tag behavior;
-- capture and notification preferences;
+- quick/tracked default capture mode;
 - allowed optional host permissions;
-- queue diagnostics and retry;
-- privacy settings.
+- a minimized queue inspector;
+- privacy-preserving diagnostics and clear-all-data controls.
+
+The popup and options page communicate with the service worker through a closed options-control
+protocol. The worker accepts it only from the extension's popup or options document and projects
+only queue counts/status/retry metadata plus public paired-device fields. Credentials, capture text,
+notes, titles, tags, and raw backend errors never cross this UI protocol.
 
 ## 5. Permission architecture
 
@@ -453,8 +457,16 @@ Core queue and capture logic is browser-neutral. Build outputs can target Chromi
 - notes/selections excluded from logs and metrics;
 - server telemetry is bounded and optional;
 - diagnostics are sanitized;
+- diagnostic export is constructed from an allowlist; URL inclusion is a volatile, visibly labeled
+  support-session choice and never enables token or captured-text inclusion;
 - clear UI indicates what will be sent before submission;
 - uninstall/revoke guidance removes the registered device token.
+
+Revoke and clear-all use two sequential, named dialogs. A paired clear-all request first attempts the
+server-side device revoke and stops without erasing local evidence if the outcome is unconfirmed.
+Only a confirmed revoke or already-unauthorized response permits cleanup of extension local/session/
+sync storage, retry alarms, the exact optional Platform origin, and volatile support state. Any
+failed cleanup step produces an incomplete result rather than a success claim.
 
 ## 20. Failure model
 
@@ -514,7 +526,18 @@ storage schema failures
 content-script validation failures
 ```
 
-No raw URL, title, selection, note, provider handle, or token is used as a metric label. Diagnostics can export sanitized queue state and version information.
+No raw URL, title, selection, note, provider handle, or token is used as a metric label. Diagnostics
+export allowlisted version, browser, pairing, queue-count, and coarse operation-state information.
+Only a volatile support-session choice can add explicitly labeled endpoint and queued-item URL
+fields; credentials and user-authored/captured content are structurally absent in every mode.
+
+## 22.1. Accessibility and localization boundary
+
+Popup and options markup uses semantic landmarks, ordered headings, labeled groups and dialogs,
+described controls, appropriate live regions, visible `:focus-visible` treatment, focus restoration,
+and reduced-motion behavior. Manifest metadata, static markup, and dynamic UI messages use the
+WebExtension localization catalog. `en` is the source locale; adding another locale requires only a
+complete catalog, not behavior-code changes.
 
 ## 23. Testing architecture
 

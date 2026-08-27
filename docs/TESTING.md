@@ -11,6 +11,10 @@ Required tests:
 - CSP/no-eval/no-remote-code, dependency audit, deterministic package contents.
 - Browser automation on Chromium and supported Firefox path.
 - Workspace extension -> Platform -> article/social/GitHub operation flow.
+- Options default-mode persistence and safe queue/device projection.
+- Double-confirmed revoke/clear-all behavior, focus restoration, and complete residue removal.
+- Diagnostics allowlist/redaction against hostile nested URLs, tokens, and user content.
+- Popup/options accessibility checklist and localization catalog/package completeness.
 
 Tests use local mock Platform and synthetic pages; no real provider session or private site fixture.
 

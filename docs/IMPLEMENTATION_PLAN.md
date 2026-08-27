@@ -8,7 +8,7 @@
 6. Submit generic article captures and track operation status.
 7. Add social provenance routing and unavailable/partial results.
 8. Add GitHub metadata/track/star modes with capability and explicit write confirmation.
-9. Add options, revoke/clear-data, redacted diagnostics, accessibility, and localization readiness.
+9. **Complete:** add options, revoke/clear-data, redacted diagnostics, accessibility, and localization readiness.
 10. Add cross-browser packaging/release/signing and workspace integration.
 
 Definition of Done: explicit capture survives offline/restart without duplicates; permissions are minimal; pages cannot access credentials; no cookies/history/network interception exists; browser and workspace tests pass.
