@@ -4,13 +4,14 @@ interface QueueItem {
   readonly attemptCount: number;
   readonly id: string;
   readonly idempotencyKey: string;
+  readonly mode?: 'quick' | 'tracked';
   readonly nextRetryAt?: number;
   readonly status: 'accepted' | 'queued' | 'retry-wait' | 'submitting' | 'terminal-failure';
   readonly terminalReason?: 'policy' | 'retry-exhausted' | 'validation';
 }
 
 interface DurableQueue {
-  enqueue(draft: CaptureDraft): Promise<QueueItem>;
+  enqueue(draft: CaptureDraft, mode?: 'quick' | 'tracked'): Promise<QueueItem>;
   processDue(): Promise<void>;
   items(): Promise<readonly QueueItem[]>;
 }
@@ -39,7 +40,7 @@ interface CaptureDraft {
 }
 
 type SubmitOutcome =
-  | { readonly type: 'accepted' }
+  | { readonly operationId?: string; readonly type: 'accepted' }
   | { readonly type: 'retryable' }
   | { readonly reason: 'authentication-required' | 'policy' | 'validation'; readonly type: 'terminal' };
 

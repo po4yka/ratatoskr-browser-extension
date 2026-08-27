@@ -35,7 +35,7 @@ export interface CaptureDraft {
 }
 
 export type DraftState =
-  | { readonly draft: CaptureDraft; readonly status: 'ready' | 'staged' | 'submitted' }
+  | { readonly draft: CaptureDraft; readonly status: 'ready' | 'staged' | 'queued' | 'submitted' }
   | { readonly message: string; readonly status: 'error' };
 
 export class CaptureDraftError extends Error {}
@@ -92,6 +92,12 @@ export function markDraftSubmitted(state: DraftState): DraftState {
   return state.status === 'staged'
     ? { draft: state.draft, status: 'submitted' }
     : markDraftError('Only a staged draft can be marked as submitted.');
+}
+
+export function markDraftQueued(state: DraftState): DraftState {
+  return state.status === 'staged'
+    ? { draft: state.draft, status: 'queued' }
+    : markDraftError('Only a staged draft can be queued.');
 }
 
 export function markDraftError(message: string): DraftState {

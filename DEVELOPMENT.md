@@ -6,9 +6,10 @@
 The first scaffold exists: a Manifest V3 project with stubbed service-worker, popup, and options
 surfaces, lint/typecheck/test/build tooling, a strict extension-pages CSP, deterministic zip
 packaging verified by a golden test, and `.github/workflows/ci.yml` running the gate below.
-Device pairing and the Platform API client are not implemented. Explicitly staged capture drafts
-are persisted in a bounded local queue with idempotency and MV3 retry recovery; the queue retries
-until a later Platform-client milestone supplies the authenticated submitter.
+Device pairing, authenticated URL-only Platform capture submission, and operation polling are
+implemented. Explicitly staged capture drafts are persisted in a bounded local queue with
+idempotency and MV3 retry recovery. Quick save returns after durable queueing; tracked save stores
+the accepted operation ID and recovers polling after worker restart.
 
 ## Intended toolchain
 

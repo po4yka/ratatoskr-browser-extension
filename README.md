@@ -231,7 +231,15 @@ The currently audited manifest baseline and excluded grants are in
 
 ## Operation progress
 
-After submission, the popup may present phases such as:
+After a user stages a draft, the popup offers two explicit modes:
+
+- **Quick save** durably queues the URL for idempotent Platform delivery and returns immediately;
+  it does not wait for extraction or analysis.
+- **Tracked save** persists the accepted Platform operation ID and polls its public operation
+  snapshot while the popup is open. A worker restart resumes from that ID without creating another
+  capture.
+
+Tracked save may present Platform-provided phases such as:
 
 ```text
 Accepted
@@ -243,7 +251,10 @@ Completed with warnings
 Failed — retry available
 ```
 
-Progress is obtained from the public Platform operation API. The extension does not infer completion from network timing or communicate directly with internal workers.
+Progress is obtained from the public Platform operation API. The extension does not infer completion
+from network timing or communicate directly with internal workers. A reader link is offered only for
+a succeeded `content.document` result with a valid document reference; a retry is offered only when
+Platform marks a terminal unsuccessful operation retryable.
 
 ## Observability and diagnostics
 

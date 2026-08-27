@@ -24,6 +24,16 @@
         </dl>
         <button data-action="stage" type="submit">Stage capture</button>
       </form>
+      <div data-role="save-actions">
+        <button data-action="quick-save" disabled type="button">Quick save</button>
+        <button data-action="tracked-save" disabled type="button">Tracked save</button>
+      </div>
+      <section data-role="operation-panel" hidden>
+        <h2>Tracked save</h2>
+        <output data-role="operation-progress">Waiting for Platform acceptance…</output>
+        <a data-action="open-reader" hidden rel="noreferrer" target="_blank">Open reader</a>
+        <button data-action="retry" hidden type="button">Retry save</button>
+      </section>
       <p aria-live="polite" data-role="status">Loading the active page…</p>
     </main>
     <script src="./popup.js"></script>

@@ -1,7 +1,8 @@
 import type { CaptureDraft } from '../capture/draft';
 import { assertCanEnqueue, expiredItem, settledItem, terminalItem } from './retention';
+import { presentQueueItem, replaceQueueItem } from './items';
 import { SerialQueueOperations } from './serial';
-import type { QueueAlarm, QueueItem, QueueLimits, QueueSnapshot, QueueStore, StoredQueueItem, SubmitCapture, SubmitOutcome } from './types';
+import type { DeliveryMode, QueueAlarm, QueueItem, QueueLimits, QueueSnapshot, QueueStore, StoredQueueItem, SubmitCapture, SubmitOutcome } from './types';
 
 const maximumRetryDelayMs = 60_000;
 const baseRetryDelayMs = 1_000;
@@ -30,7 +31,7 @@ export { QueueCapacityError } from './retention';
 export type { QueueLimits } from './types';
 
 export interface DurableQueue {
-  enqueue(draft: CaptureDraft): Promise<QueueItem>;
+  enqueue(draft: CaptureDraft, mode?: DeliveryMode): Promise<QueueItem>;
   items(): Promise<readonly QueueItem[]>;
   processDue(): Promise<void>;
 }
@@ -44,8 +45,8 @@ class StorageBackedQueue implements DurableQueue {
 
   constructor(private readonly options: QueueOptions) {}
 
-  enqueue(draft: CaptureDraft): Promise<QueueItem> {
-    return this.operations.run(() => this.enqueuePersisted(draft));
+  enqueue(draft: CaptureDraft, mode: DeliveryMode = 'quick'): Promise<QueueItem> {
+    return this.operations.run(() => this.enqueuePersisted(draft, mode));
   }
 
   items(): Promise<readonly QueueItem[]> {
@@ -61,7 +62,7 @@ class StorageBackedQueue implements DurableQueue {
     await this.operations.run(() => this.complete({ attemptId: claim.attemptId, id: claim.id, outcome }));
   }
 
-  private async enqueuePersisted(draft: CaptureDraft): Promise<QueueItem> {
+  private async enqueuePersisted(draft: CaptureDraft, mode: DeliveryMode): Promise<QueueItem> {
     const snapshot = await readSnapshot(this.options.store);
     assertCanEnqueue({ draft, limits: this.limits, snapshot });
     const item: StoredQueueItem = {
@@ -70,15 +71,16 @@ class StorageBackedQueue implements DurableQueue {
       draft,
       id: this.options.createCaptureId(),
       idempotencyKey: this.options.createIdempotencyKey(),
+      mode,
       status: 'queued',
     };
     await this.save({ items: [...snapshot.items, item] });
-    return present(item);
+    return presentQueueItem(item);
   }
 
   private async readItems(): Promise<readonly QueueItem[]> {
     const snapshot = await readSnapshot(this.options.store);
-    return snapshot.items.map(present);
+    return snapshot.items.map(presentQueueItem);
   }
 
   private async claimDueAfterExpiry(): Promise<StoredQueueItem | undefined> {
@@ -99,7 +101,7 @@ class StorageBackedQueue implements DurableQueue {
       leaseExpiresAt: now + submissionLeaseMs,
       status: 'submitting',
     };
-    await this.save({ items: replace(snapshot.items, claimed) });
+    await this.save({ items: replaceQueueItem(snapshot.items, claimed) });
     return claimed;
   }
 
@@ -109,7 +111,7 @@ class StorageBackedQueue implements DurableQueue {
     if (item === undefined || item.status !== 'submitting' || item.attemptId !== completion.attemptId) {
       return;
     }
-    await this.save({ items: replace(snapshot.items, completedItem(item, {
+    await this.save({ items: replaceQueueItem(snapshot.items, completedItem(item, {
       limits: this.limits,
       now: this.options.now(),
       outcome: completion.outcome,
@@ -166,7 +168,7 @@ interface CompletionContext {
 function completedItem(item: StoredQueueItem, context: CompletionContext): StoredQueueItem {
   const settled = settledItem(item);
   if (context.outcome.type === 'accepted') {
-    return { ...settled, attemptCount: item.attemptCount + 1, status: 'accepted' };
+    return { ...settled, attemptCount: item.attemptCount + 1, ...(context.outcome.operationId === undefined ? {} : { operationId: context.outcome.operationId }), status: 'accepted' };
   }
   if (context.outcome.type === 'terminal') {
     return { ...settled, attemptCount: item.attemptCount + 1, status: 'terminal-failure', terminalReason: context.outcome.reason };
@@ -213,19 +215,4 @@ function retryTime(item: StoredQueueItem, now: number): number {
 
 function earliest(left: number | undefined, right: number): number {
   return left === undefined || right < left ? right : left;
-}
-
-function present(item: StoredQueueItem): QueueItem {
-  return {
-    attemptCount: item.attemptCount,
-    id: item.id,
-    idempotencyKey: item.idempotencyKey,
-    ...(item.nextRetryAt === undefined ? {} : { nextRetryAt: item.nextRetryAt }),
-    status: item.status,
-    ...(item.terminalReason === undefined ? {} : { terminalReason: item.terminalReason }),
-  };
-}
-
-function replace(items: readonly StoredQueueItem[], replacement: StoredQueueItem): readonly StoredQueueItem[] {
-  return items.map((item) => item.id === replacement.id ? replacement : item);
 }

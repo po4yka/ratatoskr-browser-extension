@@ -2,24 +2,36 @@ import {
   createDraft,
   createReadyState,
   markDraftError,
+  markDraftQueued,
   stageDraft,
   type CaptureDraft,
   type DraftState,
   type TabContext,
 } from '../capture/draft';
 import { assertNever, createPopupStageMessage, decodePopupReply } from '../protocol/messages';
+import { createPopupSubmitMessage, decodeCaptureQueuedReply } from '../protocol/article-submission';
+import { createCaptureStatusMessage, decodeCaptureStatusReply, type CaptureStatusReply } from '../protocol/capture-status';
+import { operationIsTerminal, operationMessage, retryableOperation } from './operation-panel';
+import { saveableDraft } from './submission-controls';
 
 interface PopupElements {
   readonly form: HTMLFormElement;
   readonly root: HTMLElement;
+  readonly quickSave: HTMLButtonElement;
+  readonly retry: HTMLButtonElement;
   readonly selection: HTMLOutputElement;
   readonly stage: HTMLButtonElement;
   readonly status: HTMLElement;
+  readonly trackedSave: HTMLButtonElement;
   readonly title: HTMLOutputElement;
   readonly url: HTMLOutputElement;
+  readonly operationPanel: HTMLElement;
+  readonly operationProgress: HTMLOutputElement;
+  readonly openReader: HTMLAnchorElement;
 }
 
 let state: DraftState | undefined;
+let delivery: { readonly captureId: string; readonly mode: 'quick' | 'tracked' } | undefined;
 const elements = popupElements();
 
 if (elements !== undefined) {
@@ -27,7 +39,29 @@ if (elements !== undefined) {
     event.preventDefault();
     void stageCurrentDraft();
   });
+  elements.quickSave.addEventListener('click', () => void saveCurrentDraft('quick'));
+  elements.trackedSave.addEventListener('click', () => void saveCurrentDraft('tracked'));
+  elements.retry.addEventListener('click', () => delivery === undefined ? undefined : void saveCurrentDraft(delivery.mode));
   void loadActiveTab();
+}
+
+async function saveCurrentDraft(mode: 'quick' | 'tracked'): Promise<void> {
+  const draft = saveableDraft(state);
+  if (draft === undefined) {
+    return;
+  }
+  try {
+    const reply = decodeCaptureQueuedReply(await chrome.runtime.sendMessage(createPopupSubmitMessage(draft, mode)));
+    if (reply.type === 'capture.queued') {
+      delivery = { captureId: reply.captureId, mode: reply.mode };
+      render(markDraftQueued({ draft, status: 'staged' }));
+      startTracking(reply);
+    } else {
+      render(markDraftError('Capture delivery is unavailable.'));
+    }
+  } catch {
+    render(markDraftError('Capture delivery is unavailable.'));
+  }
 }
 
 async function stageCurrentDraft(): Promise<void> {
@@ -69,10 +103,15 @@ function popupElements(): PopupElements | undefined {
   const url = document.querySelector<HTMLOutputElement>('[data-role="draft-url"]');
   const selection = document.querySelector<HTMLOutputElement>('[data-role="draft-selection"]');
   const stage = document.querySelector<HTMLButtonElement>('[data-action="stage"]');
+  const quickSave = document.querySelector<HTMLButtonElement>('[data-action="quick-save"]');
+  const trackedSave = document.querySelector<HTMLButtonElement>('[data-action="tracked-save"]');
+  const retry = document.querySelector<HTMLButtonElement>('[data-action="retry"]');
+  const operationPanel = document.querySelector<HTMLElement>('[data-role="operation-panel"]');
+  const operationProgress = document.querySelector<HTMLOutputElement>('[data-role="operation-progress"]');
+  const openReader = document.querySelector<HTMLAnchorElement>('[data-action="open-reader"]');
   const status = document.querySelector<HTMLElement>('[data-role="status"]');
-  return root === null || form === null || title === null || url === null || selection === null || stage === null || status === null
-    ? undefined
-    : { form, root, selection, stage, status, title, url };
+  const candidate = { form, openReader, operationPanel, operationProgress, quickSave, retry, root, selection, stage, status, trackedSave, title, url };
+  return Object.values(candidate).some((value) => value === null) ? undefined : candidate as unknown as PopupElements;
 }
 
 function render(nextState: DraftState): void {
@@ -82,6 +121,8 @@ function render(nextState: DraftState): void {
   state = nextState;
   elements.root.dataset.state = nextState.status;
   elements.stage.disabled = nextState.status !== 'ready';
+  elements.quickSave.disabled = nextState.status !== 'staged';
+  elements.trackedSave.disabled = nextState.status !== 'staged';
   renderDraft(presentDraft(nextState));
   elements.status.textContent = stateMessage(nextState);
 }
@@ -110,11 +151,58 @@ function stateMessage(nextState: DraftState): string {
     case 'ready':
       return 'Review the draft, then stage it locally.';
     case 'staged':
-      return 'Draft staged locally. It has not been submitted to Ratatoskr.';
+      return 'Draft staged locally. Choose quick save or tracked save.';
+    case 'queued':
+      return 'Capture is queued for delivery.';
     case 'submitted':
       return 'Capture submitted to Ratatoskr.';
     case 'error':
       return nextState.message;
+  }
+}
+
+async function refreshTrackedStatus(): Promise<void> {
+  if (delivery?.mode !== 'tracked') {
+    return;
+  }
+  try {
+    const reply = decodeCaptureStatusReply(await chrome.runtime.sendMessage(createCaptureStatusMessage(delivery.captureId)));
+    if (reply.type === 'capture.status') {
+      renderOperation(reply);
+      if (!operationIsTerminal(reply.operation?.status)) {
+        window.setTimeout(() => void refreshTrackedStatus(), 2_000);
+      }
+    }
+  } catch {
+    window.setTimeout(() => void refreshTrackedStatus(), 2_000);
+  }
+}
+
+function renderOperation(reply: CaptureStatusReply): void {
+  if (elements === undefined || reply.mode !== 'tracked') {
+    return;
+  }
+  const operation = reply.operation;
+  elements.operationPanel.hidden = false;
+  elements.operationProgress.value = operationMessage(operation);
+  renderReaderLink(operation?.readerLink);
+  elements.retry.hidden = !retryableOperation(operation);
+}
+
+function startTracking(reply: { readonly captureId: string; readonly mode: 'quick' | 'tracked' }): void {
+  if (reply.mode === 'tracked') {
+    renderOperation({ captureId: reply.captureId, mode: reply.mode, protocolVersion: 1, queueStatus: 'queued', type: 'capture.status' });
+    void refreshTrackedStatus();
+  }
+}
+
+function renderReaderLink(link: string | undefined): void {
+  if (elements === undefined) {
+    return;
+  }
+  elements.openReader.hidden = link === undefined;
+  if (link !== undefined) {
+    elements.openReader.href = link;
   }
 }
 

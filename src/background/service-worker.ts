@@ -2,9 +2,15 @@ import { registerCaptureContextMenus, type ContextMenusApi, type MenuClickInfo }
 import { createChromeCredentialStore } from '../auth/credential-store';
 import { createAuthorizedQueueSubmitter, createCredentialBoundary } from '../auth/authorization';
 import { createPlatformIdentityClient } from '../auth/platform-identity';
+import { createOperationTracker, readerDeepLink } from '../capture/operation-tracker';
+import { ChromeOperationTrackerStore } from '../capture/operation-storage';
+import { createPlatformCaptureClient, PlatformCaptureError } from '../capture/platform-client';
 import { ChromeQueueAlarm, registerQueueAlarm } from '../queue/alarm';
 import { createQueue } from '../queue/queue';
 import { ChromeStorageQueueStore } from '../queue/storage';
+import type { SubmitOutcome, SubmitRequest } from '../queue/types';
+import { isArticleSubmissionCandidate, handleArticleSubmissionMessage } from '../protocol/article-submission';
+import { isCaptureStatusCandidate, handleCaptureStatusMessage, type CaptureOperationStatus, type CaptureStatusReply } from '../protocol/capture-status';
 import { isQueueInspectionCandidate, handleQueueInspectionMessage } from '../protocol/queue-inspection';
 import { handleWorkerMessage } from '../protocol/messages';
 import { isPopupStageDraftMessage } from '../protocol/validation';
@@ -12,6 +18,10 @@ import { isPopupStageDraftMessage } from '../protocol/validation';
 const credentialStore = createChromeCredentialStore();
 void credentialStore.initialize();
 const authorization = createCredentialBoundary({ now: () => Date.now(), refresh: (token, endpoint) => createPlatformIdentityClient({ endpoint, fetch }).refresh(token), store: credentialStore });
+const tracker = createOperationTracker({
+  client: { readOperation: async ({ operationId }) => (await captureClient()).readOperation({ accessToken: await authorization.accessToken(), operationId }) },
+  store: new ChromeOperationTrackerStore(),
+});
 
 const queue = createQueue({
   alarm: new ChromeQueueAlarm(),
@@ -21,11 +31,12 @@ const queue = createQueue({
   now: () => Date.now(),
   random: () => Math.random(),
   store: new ChromeStorageQueueStore(),
-  submit: createAuthorizedQueueSubmitter({ authorization, submit: async () => ({ retryAfterMs: 300_000, type: 'retryable' }) }),
+  submit: createAuthorizedQueueSubmitter({ authorization, submit: submitCapture }),
 });
 
 registerQueueAlarm(() => queue.processDue());
 void queue.processDue();
+void recoverTrackedOperations();
 
 chrome.runtime.onMessage.addListener((...args: RuntimeMessageArgs) => handleRuntimeMessage(args));
 
@@ -40,9 +51,23 @@ function handleRuntimeMessage(args: RuntimeMessageArgs): boolean {
     void handleQueueInspectionMessage(message, { context, queue }).then(sendResponse);
     return true;
   }
+  if (isArticleSubmissionCandidate(message)) {
+    void handleArticleSubmissionMessage(message, { context, queue }).then((reply) => {
+      sendResponse(reply);
+      void processQueueAndRecover();
+    }).catch(() => sendResponse(queueUnavailable()));
+    return true;
+  }
+  if (isCaptureStatusCandidate(message)) {
+    void handleCaptureStatusMessage(message, { context, readStatus: readCaptureStatus }).then(sendResponse).catch(() => sendResponse(queueUnavailable()));
+    return true;
+  }
   const reply = handleWorkerMessage(message, context);
   if (reply.type === 'capture-draft.staged' && isPopupStageDraftMessage(message)) {
-    void queue.enqueue(message.draft).then(() => sendResponse(reply)).catch(() => sendResponse(queueUnavailable()));
+    void queue.enqueue(message.draft).then(() => {
+      sendResponse(reply);
+      void processQueueAndRecover();
+    }).catch(() => sendResponse(queueUnavailable()));
     return true;
   }
   sendResponse(reply);
@@ -52,6 +77,7 @@ function handleRuntimeMessage(args: RuntimeMessageArgs): boolean {
 async function pair(message: { readonly code: string; readonly endpoint: string }): Promise<{ readonly deviceId: string; readonly protocolVersion: 1; readonly status: 'paired'; readonly type: 'pairing.status' }> {
   const paired = await createPlatformIdentityClient({ endpoint: message.endpoint, fetch }).pair(message.code);
   await credentialStore.save({ ...paired, endpoint: message.endpoint });
+  void processQueueAndRecover();
   return { deviceId: paired.deviceId, protocolVersion: 1, status: 'paired', type: 'pairing.status' };
 }
 
@@ -70,7 +96,7 @@ chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.removeAll(() => {
     registerCaptureContextMenus(browserContextMenus(), (state) => {
       if (state.status === 'staged') {
-        void queue.enqueue(state.draft);
+        void queue.enqueue(state.draft).then(() => processQueueAndRecover());
       }
     });
   });
@@ -78,6 +104,67 @@ chrome.runtime.onInstalled.addListener(() => {
 
 function queueUnavailable(): { readonly code: 'queue-unavailable'; readonly protocolVersion: 1; readonly type: 'protocol.error' } {
   return { code: 'queue-unavailable', protocolVersion: 1, type: 'protocol.error' };
+}
+
+async function submitCapture(request: SubmitRequest & { readonly accessToken: string }): Promise<SubmitOutcome> {
+  try {
+    const accepted = await (await captureClient()).submit({ ...request, url: request.draft.url });
+    return { operationId: accepted.operationId, type: 'accepted' };
+  } catch (error) {
+    if (error instanceof PlatformCaptureError) {
+      return error.kind === 'retryable' ? { type: 'retryable' } : { reason: error.kind === 'authentication-required' ? 'authentication-required' : 'validation', type: 'terminal' };
+    }
+    return { type: 'retryable' };
+  }
+}
+
+async function captureClient() {
+  return createPlatformCaptureClient({ endpoint: await authorization.endpoint(), fetch });
+}
+
+async function processQueueAndRecover(): Promise<void> {
+  await queue.processDue();
+  await recoverTrackedOperations();
+}
+
+async function recoverTrackedOperations(): Promise<void> {
+  const items = await queue.items();
+  await tracker.recover(items.filter((item): item is typeof item & { readonly status: 'accepted' } => item.status === 'accepted'));
+  try {
+    await tracker.poll();
+  } catch {
+    // A later popup status request or worker wake-up retries polling with the persisted operation ID.
+  }
+}
+
+async function readCaptureStatus(captureId: string): Promise<CaptureStatusReply | undefined> {
+  await processQueueAndRecover();
+  const item = (await queue.items()).find((candidate) => candidate.id === captureId);
+  if (item === undefined) {
+    return undefined;
+  }
+  const tracked = (await tracker.items()).find((candidate) => candidate.captureId === captureId);
+  const operation = tracked === undefined ? undefined : await operationStatus(tracked.snapshot);
+  return {
+    captureId,
+    mode: item.mode ?? 'quick',
+    ...(operation === undefined ? {} : { operation }),
+    protocolVersion: 1,
+    queueStatus: item.status,
+    type: 'capture.status',
+  };
+}
+
+async function operationStatus(snapshot: Awaited<ReturnType<typeof tracker.items>>[number]['snapshot']): Promise<CaptureOperationStatus> {
+  const readerLink = readerDeepLink(await authorization.endpoint(), snapshot);
+  return {
+    ...(snapshot.progressPercent === undefined ? {} : { progressPercent: snapshot.progressPercent }),
+    ...(readerLink === undefined ? {} : { readerLink }),
+    retryable: snapshot.retryable,
+    ...(snapshot.stage === undefined ? {} : { stage: snapshot.stage }),
+    status: snapshot.status,
+    ...(snapshot.warnings.length === 0 ? {} : { warningCount: snapshot.warnings.length }),
+  };
 }
 
 function browserContextMenus(): ContextMenusApi {

@@ -6,6 +6,7 @@ export interface CredentialBoundary {
   accessToken(): Promise<string>;
   connectionState(): Promise<'logged-out' | 'paired'>;
   degradeToLoggedOut(): Promise<void>;
+  endpoint(): Promise<string>;
 }
 
 export interface RefreshResult {
@@ -74,6 +75,10 @@ class CredentialBoundaryImpl implements CredentialBoundary {
 
   async connectionState(): Promise<'logged-out' | 'paired'> {
     return isCredentialRecord(await this.options.store.load()) ? 'paired' : 'logged-out';
+  }
+
+  async endpoint(): Promise<string> {
+    return (await this.readCredential()).endpoint;
   }
 
   async degradeToLoggedOut(): Promise<void> {

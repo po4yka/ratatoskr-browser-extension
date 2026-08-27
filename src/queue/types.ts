@@ -1,12 +1,15 @@
 import type { CaptureDraft } from '../capture/draft';
 
 export type QueueStatus = 'accepted' | 'queued' | 'retry-wait' | 'submitting' | 'terminal-failure';
+export type DeliveryMode = 'quick' | 'tracked';
 
 export interface QueueItem {
   readonly attemptCount: number;
   readonly id: string;
   readonly idempotencyKey: string;
+  readonly mode?: DeliveryMode;
   readonly nextRetryAt?: number;
+  readonly operationId?: string;
   readonly status: QueueStatus;
   readonly terminalReason?: 'authentication-required' | 'policy' | 'retention-expired' | 'retry-exhausted' | 'validation';
 }
@@ -39,7 +42,7 @@ export interface QueueLimits {
 }
 
 export type SubmitOutcome =
-  | { readonly type: 'accepted' }
+  | { readonly operationId?: string; readonly type: 'accepted' }
   | { readonly type: 'retryable'; readonly retryAfterMs?: number }
   | { readonly reason: 'authentication-required' | 'policy' | 'validation'; readonly type: 'terminal' };
 

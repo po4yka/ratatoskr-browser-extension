@@ -32,6 +32,8 @@ export function settledItem(item: StoredQueueItem): Omit<StoredQueueItem, 'attem
     draft: item.draft,
     id: item.id,
     idempotencyKey: item.idempotencyKey,
+    ...(item.mode === undefined ? {} : { mode: item.mode }),
+    ...(item.operationId === undefined ? {} : { operationId: item.operationId }),
     status: item.status,
   };
 }
