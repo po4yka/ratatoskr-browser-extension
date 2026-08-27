@@ -1,5 +1,9 @@
 import type { SocialCaptureProvenance } from './draft';
 
+export { createGithubRepositoryClient } from '../github/client';
+export { createGithubActionFlow } from '../github/confirmation';
+export { projectGithubActionResult } from '../github/action-result';
+
 export type OperationStatus = 'accepted' | 'queued' | 'running' | 'succeeded' | 'partially_succeeded' | 'failed' | 'cancelled';
 
 export type SocialOutcome =

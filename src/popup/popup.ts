@@ -6,13 +6,14 @@ import {
   stageDraft,
   type CaptureDraft,
   type DraftState,
-  type TabContext,
 } from '../capture/draft';
 import { assertNever, createPopupStageMessage, decodePopupReply } from '../protocol/messages';
 import { createPopupSubmitMessage, decodeCaptureQueuedReply } from '../protocol/article-submission';
 import { createCaptureStatusMessage, decodeCaptureStatusReply, type CaptureStatusReply } from '../protocol/capture-status';
 import { operationIsTerminal, operationMessage, retryableOperation } from './operation-panel';
 import { saveableDraft } from './submission-controls';
+import { connectGithubPanel } from './github-panel';
+import { activeTabErrorMessage, tabContext } from './tab-context';
 
 interface PopupElements {
   readonly form: HTMLFormElement;
@@ -33,6 +34,7 @@ interface PopupElements {
 let state: DraftState | undefined;
 let delivery: { readonly captureId: string; readonly mode: 'quick' | 'tracked' } | undefined;
 const elements = popupElements();
+const githubPanel = connectGithubPanel();
 
 if (elements !== undefined) {
   elements.form.addEventListener('submit', (event) => {
@@ -47,7 +49,7 @@ if (elements !== undefined) {
 
 async function saveCurrentDraft(mode: 'quick' | 'tracked'): Promise<void> {
   const draft = saveableDraft(state);
-  if (draft === undefined) {
+  if (draft === undefined || draft.github !== undefined) {
     return;
   }
   try {
@@ -92,7 +94,7 @@ async function loadActiveTab(): Promise<void> {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     render(createReadyState(createDraft({ entryPoint: 'popup', tab: tabContext(tab) })));
   } catch (error) {
-    render(markDraftError(errorMessage(error)));
+    render(markDraftError(activeTabErrorMessage(error)));
   }
 }
 
@@ -119,11 +121,13 @@ function render(nextState: DraftState): void {
     return;
   }
   state = nextState;
+  const draft = presentDraft(nextState);
   elements.root.dataset.state = nextState.status;
   elements.stage.disabled = nextState.status !== 'ready';
-  elements.quickSave.disabled = nextState.status !== 'staged';
-  elements.trackedSave.disabled = nextState.status !== 'staged';
-  renderDraft(presentDraft(nextState));
+  elements.quickSave.disabled = nextState.status !== 'staged' || draft?.github !== undefined;
+  elements.trackedSave.disabled = nextState.status !== 'staged' || draft?.github !== undefined;
+  renderDraft(draft);
+  githubPanel?.present(draft, nextState.status === 'staged');
   elements.status.textContent = stateMessage(nextState);
 }
 
@@ -151,7 +155,9 @@ function stateMessage(nextState: DraftState): string {
     case 'ready':
       return 'Review the draft, then stage it locally.';
     case 'staged':
-      return 'Draft staged locally. Choose quick save or tracked save.';
+      return nextState.draft.github === undefined
+        ? 'Draft staged locally. Choose quick save or tracked save.'
+        : 'Repository staged locally. Choose an available GitHub action.';
     case 'queued':
       return 'Capture is queued for delivery.';
     case 'submitted':
@@ -204,15 +210,4 @@ function renderReaderLink(link: string | undefined): void {
   if (link !== undefined) {
     elements.openReader.href = link;
   }
-}
-
-function tabContext(tab: chrome.tabs.Tab | undefined): TabContext {
-  return {
-    ...(tab?.title === undefined ? {} : { title: tab.title }),
-    ...(tab?.url === undefined ? {} : { url: tab.url }),
-  };
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : 'The active page cannot be captured.';
 }

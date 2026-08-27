@@ -1,4 +1,4 @@
-import { registerCaptureContextMenus, type ContextMenusApi, type MenuClickInfo } from './context-menu';
+import { registerCaptureContextMenus } from './context-menu';
 import { createChromeCredentialStore } from '../auth/credential-store';
 import { createAuthorizedQueueSubmitter, createCredentialBoundary } from '../auth/authorization';
 import { createPlatformIdentityClient } from '../auth/platform-identity';
@@ -14,6 +14,8 @@ import { isCaptureStatusCandidate, handleCaptureStatusMessage, type CaptureOpera
 import { isQueueInspectionCandidate, handleQueueInspectionMessage } from '../protocol/queue-inspection';
 import { handleWorkerMessage } from '../protocol/messages';
 import { isPopupStageDraftMessage } from '../protocol/validation';
+import { createGithubRuntime } from './github-runtime';
+import { browserContextMenus } from './browser-context-menus';
 
 const credentialStore = createChromeCredentialStore();
 void credentialStore.initialize();
@@ -21,6 +23,11 @@ const authorization = createCredentialBoundary({ now: () => Date.now(), refresh:
 const tracker = createOperationTracker({
   client: { readOperation: async ({ operationId }) => (await captureClient()).readOperation({ accessToken: await authorization.accessToken(), operationId }) },
   store: new ChromeOperationTrackerStore(),
+});
+const githubRuntime = createGithubRuntime({
+  accessToken: () => authorization.accessToken(),
+  endpoint: () => authorization.endpoint(),
+  fetcher: fetch,
 });
 
 const queue = createQueue({
@@ -62,8 +69,21 @@ function handleRuntimeMessage(args: RuntimeMessageArgs): boolean {
     void handleCaptureStatusMessage(message, { context, readStatus: readCaptureStatus }).then(sendResponse).catch(() => sendResponse(queueUnavailable()));
     return true;
   }
+  if (githubRuntime.handles(message)) {
+    void githubRuntime.handle(message, context).then(sendResponse).catch(() => sendResponse(githubUnavailable()));
+    return true;
+  }
+  return respondToWorkerMessage({ context, message, sendResponse });
+}
+
+function respondToWorkerMessage(options: { readonly context: { readonly extensionId: string; readonly sender: chrome.runtime.MessageSender }; readonly message: unknown; readonly sendResponse: (response?: unknown) => void }): boolean {
+  const { context, message, sendResponse } = options;
   const reply = handleWorkerMessage(message, context);
   if (reply.type === 'capture-draft.staged' && isPopupStageDraftMessage(message)) {
+    if (message.draft.github !== undefined) {
+      sendResponse(reply);
+      return false;
+    }
     void queue.enqueue(message.draft).then(() => {
       sendResponse(reply);
       void processQueueAndRecover();
@@ -72,6 +92,10 @@ function handleRuntimeMessage(args: RuntimeMessageArgs): boolean {
   }
   sendResponse(reply);
   return false;
+}
+
+function githubUnavailable(): { readonly code: 'github-unavailable'; readonly protocolVersion: 1; readonly type: 'protocol.error' } {
+  return { code: 'github-unavailable', protocolVersion: 1, type: 'protocol.error' };
 }
 
 async function pair(message: { readonly code: string; readonly endpoint: string }): Promise<{ readonly deviceId: string; readonly protocolVersion: 1; readonly status: 'paired'; readonly type: 'pairing.status' }> {
@@ -95,7 +119,7 @@ type RuntimeMessageArgs = [unknown, chrome.runtime.MessageSender, (response?: un
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.removeAll(() => {
     registerCaptureContextMenus(browserContextMenus(), (state) => {
-      if (state.status === 'staged') {
+      if (state.status === 'staged' && state.draft.github === undefined) {
         void queue.enqueue(state.draft).then(() => processQueueAndRecover());
       }
     });
@@ -169,39 +193,5 @@ async function operationStatus(snapshot: Awaited<ReturnType<typeof tracker.items
     ...(snapshot.stage === undefined ? {} : { stage: snapshot.stage }),
     status: snapshot.status,
     ...(snapshot.warnings.length === 0 ? {} : { warningCount: snapshot.warnings.length }),
-  };
-}
-
-function browserContextMenus(): ContextMenusApi {
-  return {
-    create: (definition) => {
-      chrome.contextMenus.create({
-        contexts: [...definition.contexts] as [chrome.contextMenus.ContextType, ...chrome.contextMenus.ContextType[]],
-        id: definition.id,
-        title: definition.title,
-      });
-    },
-    onClicked: {
-      addListener: (listener) => {
-        chrome.contextMenus.onClicked.addListener((info, tab) => {
-          listener(menuClickInfo(info), tabContext(tab));
-        });
-      },
-    },
-  };
-}
-
-function menuClickInfo(info: chrome.contextMenus.OnClickData): MenuClickInfo {
-  return {
-    menuItemId: String(info.menuItemId),
-    ...(info.linkUrl === undefined ? {} : { linkUrl: info.linkUrl }),
-    ...(info.selectionText === undefined ? {} : { selectionText: info.selectionText }),
-  };
-}
-
-function tabContext(tab: chrome.tabs.Tab | undefined): { readonly title?: string; readonly url?: string } {
-  return {
-    ...(tab?.title === undefined ? {} : { title: tab.title }),
-    ...(tab?.url === undefined ? {} : { url: tab.url }),
   };
 }

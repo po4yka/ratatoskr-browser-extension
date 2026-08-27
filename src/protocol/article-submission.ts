@@ -53,7 +53,8 @@ export function decodeCaptureQueuedReply(raw: unknown): CaptureQueued | Protocol
 function isPopupSubmitMessage(value: unknown): value is PopupSubmitMessage {
   return isRecord(value) && hasOnlyKeys(value, ['draft', 'mode', 'protocolVersion', 'type'])
     && value.protocolVersion === PROTOCOL_VERSION && value.type === 'popup.submit-draft'
-    && isCaptureDraft(value.draft) && (value.mode === 'quick' || value.mode === 'tracked');
+    && isCaptureDraft(value.draft) && value.draft.github === undefined
+    && (value.mode === 'quick' || value.mode === 'tracked');
 }
 
 function isCaptureQueued(value: unknown): value is CaptureQueued {
@@ -65,7 +66,7 @@ function isCaptureQueued(value: unknown): value is CaptureQueued {
 function isProtocolError(value: unknown): value is ProtocolError {
   return isRecord(value) && hasOnlyKeys(value, ['code', 'protocolVersion', 'type'])
     && value.protocolVersion === PROTOCOL_VERSION && value.type === 'protocol.error'
-    && ['credential-access-denied', 'invalid-message', 'queue-unavailable', 'unexpected-sender', 'unknown-message', 'unsupported-protocol-version'].includes(String(value.code));
+    && ['credential-access-denied', 'github-unavailable', 'invalid-message', 'queue-unavailable', 'unexpected-sender', 'unknown-message', 'unsupported-protocol-version'].includes(String(value.code));
 }
 
 function protocolError(code: ProtocolError['code']): ProtocolError {

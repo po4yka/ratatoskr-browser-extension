@@ -22,4 +22,19 @@ describe('popup markup', () => {
     expect(markup).toContain('aria-live="polite"');
     expect(markup).not.toContain('tabindex="-1"');
   });
+
+  it('provides a capability-gated GitHub preview and separate write confirmations', () => {
+    const markup = loadPopupMarkup();
+
+    expect(markup).toContain('data-role="github-preview"');
+    expect(markup).toContain('data-role="github-availability"');
+    expect(markup).toContain('data-role="github-full-name"');
+    expect(markup).toContain('data-action="github-metadata"');
+    expect(markup).toContain('data-action="github-track"');
+    expect(markup).toContain('data-action="github-star"');
+    expect(markup).toContain('<dialog data-role="github-track-confirmation"');
+    expect(markup).toContain('<dialog data-role="github-star-confirmation"');
+    expect(markup).toContain('This writes to your connected GitHub account.');
+    expect(markup).toContain('data-role="github-results"');
+  });
 });

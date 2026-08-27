@@ -126,7 +126,7 @@ function isOperationState(value: unknown): value is CaptureOperationStatus['stat
 function isProtocolError(value: unknown): value is ProtocolError {
   return isRecord(value) && hasOnlyKeys(value, ['code', 'protocolVersion', 'type'])
     && value.protocolVersion === PROTOCOL_VERSION && value.type === 'protocol.error'
-    && ['credential-access-denied', 'invalid-message', 'queue-unavailable', 'unexpected-sender', 'unknown-message', 'unsupported-protocol-version'].includes(String(value.code));
+    && ['credential-access-denied', 'github-unavailable', 'invalid-message', 'queue-unavailable', 'unexpected-sender', 'unknown-message', 'unsupported-protocol-version'].includes(String(value.code));
 }
 
 function protocolError(code: ProtocolError['code']): ProtocolError {

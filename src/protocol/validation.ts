@@ -1,4 +1,4 @@
-import { classifySocialCapture, type CaptureDraft } from '../capture/draft';
+import { classifyGithubRepository, classifySocialCapture, type CaptureDraft } from '../capture/draft';
 import type { ContentContext, ContentContextMessage, PopupStageDraftMessage, ProtocolError } from './messages';
 
 export type UnknownRecord = Record<string, unknown>;
@@ -17,10 +17,10 @@ export function hasAllowedKeys(record: UnknownRecord, keys: readonly string[]): 
 }
 
 export function isCaptureDraft(value: unknown): value is CaptureDraft {
-  if (!isRecord(value) || !hasAllowedKeys(value, ['captureKind', 'entryPoint', 'selectionText', 'social', 'sourcePageUrl', 'title', 'url'])) {
+  if (!isRecord(value) || !hasAllowedKeys(value, ['captureKind', 'entryPoint', 'github', 'selectionText', 'social', 'sourcePageUrl', 'title', 'url'])) {
     return false;
   }
-  return hasValidDraftKind(value) && hasValidDraftStrings(value) && hasValidDraftSocial(value);
+  return hasValidDraftKind(value) && hasValidDraftStrings(value) && hasValidDraftGithub(value) && hasValidDraftSocial(value);
 }
 
 export function isContentContext(value: unknown): value is ContentContext {
@@ -42,7 +42,7 @@ export function isContentContextMessage(value: unknown): value is ContentContext
 export function isProtocolError(value: unknown): value is ProtocolError {
   return isRecord(value)
     && hasOnlyKeys(value, ['code', 'protocolVersion', 'type'])
-    && isOneOf(value.code, ['credential-access-denied', 'invalid-message', 'queue-unavailable', 'unexpected-sender', 'unknown-message', 'unsupported-protocol-version']);
+    && isOneOf(value.code, ['credential-access-denied', 'github-unavailable', 'invalid-message', 'queue-unavailable', 'unexpected-sender', 'unknown-message', 'unsupported-protocol-version']);
 }
 
 function hasValidDraftKind(value: UnknownRecord): boolean {
@@ -68,6 +68,14 @@ function hasValidDraftSocial(value: UnknownRecord): boolean {
     && value.social.acquisition === 'browser_extension'
     && value.social.savedAuthority === 'explicit_user_capture'
     && isCanonicalTimestamp(value.social.capturedAt);
+}
+
+function hasValidDraftGithub(value: UnknownRecord): boolean {
+  const route = classifyGithubRepository(value.url as string);
+  if (route === undefined) return value.github === undefined;
+  return isRecord(value.github)
+    && hasOnlyKeys(value.github, ['previewUrl'])
+    && value.github.previewUrl === route.previewUrl;
 }
 
 function isCanonicalTimestamp(value: unknown): boolean {

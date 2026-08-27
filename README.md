@@ -2,7 +2,10 @@
 
 `ratatoskr-browser-extension` is the explicit browser capture client for Ratatoskr. It lets a user save the current page, selected text, or a supported social/GitHub URL to their local Ratatoskr deployment without exposing provider passwords, session cookies, or hidden browser APIs.
 
-> **Status:** scaffold. A TypeScript Manifest V3 project exists with stubbed service-worker, popup, and options surfaces, lint/typecheck/test/build tooling, a strict extension-pages CSP, deterministic zip packaging with a byte-stability test, and a CI gate. No capture logic, content script, local queue, device pairing, or Platform API client is implemented yet.
+> **Status:** active implementation. The TypeScript Manifest V3 client has explicit draft capture,
+> a bounded durable queue, device pairing, generic/social submission, operation tracking, and the
+> capability-gated GitHub repository flow described below. Release hardening and cross-browser
+> packaging remain later implementation-plan items.
 
 > [!IMPORTANT]
 > **Ratatoskr is in development.** No database holds data that has to survive a schema change.
@@ -164,7 +167,17 @@ terminal outcome retryable.
 
 ## GitHub repository workflow
 
-When the current page is a GitHub repository, the extension can open a safe repository action flow:
+The extension recognizes only an HTTPS `github.com/<owner>/<repository>` root (an optional trailing
+slash is accepted for detection). It does not treat issue, pull, tree, blob, release, query-bearing,
+fragment-bearing, credential-bearing, port-bearing, or lookalike-host URLs as repository actions.
+The original captured URL remains unchanged while the contract-valid root is used for preview.
+
+For a recognized repository, the popup reads Platform's authenticated capability document. It
+shows a metadata preview only when the sampled `github` service document is present, non-stale, and
+advertises repository preview. If GitHub is absent, stale, or malformed, the popup says the actions
+are unavailable and does not silently send the repository through generic article ingestion.
+
+The preview can advertise these closed actions:
 
 ```text
 metadata
@@ -172,7 +185,9 @@ track
 star
 ```
 
-Default behavior is `metadata`. `track` requests Git Vault enrollment. `star` is an external GitHub write and requires:
+`metadata` adds or refreshes Catalog metadata after an explicit button click. `track` requests
+desired backup policy and requires an immediate confirmation dialog. `star` is an external GitHub
+write and requires a separate dialog that names the connected account and external effect, plus:
 
 - a connected GitHub account;
 - necessary provider scope;
@@ -180,7 +195,14 @@ Default behavior is `metadata`. `track` requests Git Vault enrollment. `star` is
 - an idempotency key;
 - an audit record.
 
-The extension never stores the GitHub access token.
+Requests go through the paired Platform origin and its Edge-proxied `/v1/gh` routes. The extension
+never receives or stores the GitHub access token and never calls GitHub directly. The flow is hidden
+until Platform has a healthy configured `github` gateway route.
+
+Action results retain three independent facts: repository metadata, provider star, and desired
+backup policy. A partial result can therefore state that metadata and the GitHub star succeeded
+while backup-policy publication failed. `accepted` backup policy means accepted for publication;
+it never means that backup storage completed or was verified.
 
 ## Authentication
 
@@ -319,4 +341,6 @@ and workspace Compose profile do not exist yet.
 
 ## Project status
 
-This README defines the intended explicit browser-capture client. The first scaffold exists today: manifest, stubbed surfaces, toolchain, deterministic packaging, and CI (see `DEVELOPMENT.md` for the exact commands). Everything capture-related — active-tab access, context menus, selection handling, queueing, pairing, submission — is still to come.
+Implementation-plan items 1–8 now have code and focused tests. The exact local product gate remains
+documented in `DEVELOPMENT.md`; options/revoke/diagnostics polish and cross-browser release work are
+still pending.

@@ -9,6 +9,10 @@ export interface SocialCaptureProvenance {
   readonly savedAuthority: 'explicit_user_capture';
 }
 
+export interface GitHubRepositoryIntent {
+  readonly previewUrl: string;
+}
+
 export interface TabContext {
   readonly title?: string;
   readonly url?: string;
@@ -36,6 +40,7 @@ export type CaptureDraftInput = PageDraftInput | LinkDraftInput | SelectionDraft
 export interface CaptureDraft {
   readonly captureKind: CaptureKind;
   readonly entryPoint: CaptureEntryPoint;
+  readonly github?: GitHubRepositoryIntent;
   readonly sourcePageUrl: string;
   readonly title: string;
   readonly url: string;
@@ -70,6 +75,7 @@ export function createDraft(input: CaptureDraftInput): CaptureDraft {
       sourcePageUrl,
       title,
       url: requireHttpUrl(input.linkUrl, 'The selected link cannot be captured.'),
+      ...githubCapture(input.linkUrl),
       ...socialCapture(input.linkUrl),
     };
   }
@@ -86,6 +92,7 @@ export function createDraft(input: CaptureDraftInput): CaptureDraft {
       sourcePageUrl,
       title,
       url: sourcePageUrl,
+      ...githubCapture(sourcePageUrl),
       ...socialCapture(sourcePageUrl),
     };
   }
@@ -96,8 +103,37 @@ export function createDraft(input: CaptureDraftInput): CaptureDraft {
     sourcePageUrl,
     title,
     url: sourcePageUrl,
+    ...githubCapture(sourcePageUrl),
     ...socialCapture(sourcePageUrl),
   };
+}
+
+/**
+ * Recognizes only the repository-root URL shape accepted by the shared GitHub preview contract.
+ * The returned URL is for preview routing; the draft keeps the original captured URL unchanged.
+ */
+export function classifyGithubRepository(value: string): GitHubRepositoryIntent | undefined {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return undefined;
+  }
+  if (!isGithubRepositoryOrigin(url)) return undefined;
+  const match = /^\/([A-Za-z0-9][A-Za-z0-9_.-]{0,99})\/([A-Za-z0-9][A-Za-z0-9_.-]{0,99})\/?$/.exec(url.pathname);
+  return match === null ? undefined : { previewUrl: `https://github.com/${match[1]}/${match[2]}` };
+}
+
+function isGithubRepositoryOrigin(url: URL): boolean {
+  return [
+    url.protocol === 'https:',
+    url.hostname.toLowerCase() === 'github.com',
+    url.username === '',
+    url.password === '',
+    url.port === '',
+    url.search === '',
+    url.hash === '',
+  ].every(Boolean);
 }
 
 /**
@@ -173,4 +209,9 @@ function socialCapture(url: string): { readonly social: SocialCaptureProvenance 
         savedAuthority: 'explicit_user_capture',
       },
     };
+}
+
+function githubCapture(url: string): { readonly github: GitHubRepositoryIntent } | Record<never, never> {
+  const github = classifyGithubRepository(url);
+  return github === undefined ? {} : { github };
 }

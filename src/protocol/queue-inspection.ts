@@ -104,7 +104,7 @@ function isTerminalReason(value: unknown): boolean {
 }
 
 function isProtocolErrorCode(value: unknown): boolean {
-  return value === 'invalid-message' || value === 'queue-unavailable' || value === 'unexpected-sender'
+  return value === 'github-unavailable' || value === 'invalid-message' || value === 'queue-unavailable' || value === 'unexpected-sender'
     || value === 'unknown-message' || value === 'unsupported-protocol-version';
 }
 
