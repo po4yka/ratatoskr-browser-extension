@@ -8,7 +8,10 @@ Records the smallest reviewed browser-permission baseline for the extension road
 
 ### Requirement: Reviewed permission baseline
 
-The packaged manifest SHALL request only `activeTab`, `contextMenus`, and `storage` as extension permissions. It SHALL request no persistent host permissions or static content scripts in this milestone.
+The packaged manifest SHALL request only `activeTab`, `alarms`, `contextMenus`, and `storage` as
+extension permissions. It SHALL request no persistent host permissions or static content scripts in
+this milestone. The `alarms` permission SHALL be used only to wake due retries for explicitly
+staged local captures.
 
 #### Scenario: Manifest permission audit
 

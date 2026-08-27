@@ -17,8 +17,35 @@ interface ProtocolApi {
   ): unknown;
 }
 
+interface QueueProtocolApi {
+  createQueueInspectionMessage(): unknown;
+  handleQueueInspectionMessage(
+    message: unknown,
+    handler: {
+      readonly context: { readonly extensionId: string; readonly sender: { readonly id?: string; readonly tab?: { readonly id?: number } } };
+      readonly queue: { readonly items: () => Promise<readonly QueuedItem[]> };
+    },
+  ): Promise<unknown>;
+}
+
+interface QueueSummary {
+  readonly attemptCount: number;
+  readonly id: string;
+  readonly nextRetryAt?: number;
+  readonly status: 'accepted' | 'queued' | 'retry-wait' | 'submitting' | 'terminal-failure';
+  readonly terminalReason?: 'policy' | 'retention-expired' | 'retry-exhausted' | 'validation';
+}
+
+interface QueuedItem extends QueueSummary {
+  readonly idempotencyKey: string;
+}
+
 async function loadProtocolApi(): Promise<ProtocolApi> {
   return (await import(new URL('../src/protocol/messages.ts', import.meta.url).href)) as ProtocolApi;
+}
+
+async function loadQueueProtocolApi(): Promise<QueueProtocolApi> {
+  return (await import(new URL('../src/protocol/queue-inspection.ts', import.meta.url).href)) as QueueProtocolApi;
 }
 
 const draft: CaptureDraft = {
@@ -72,5 +99,29 @@ describe('extension runtime message protocol', () => {
         { extensionId: 'extension-id', sender: { id: 'other-extension', tab: { id: 7 } } },
       ),
     ).toEqual({ code: 'unexpected-sender', protocolVersion: 1, type: 'protocol.error' });
+  });
+
+  it('returns a safe queue summary to an extension page', async () => {
+    const { createQueueInspectionMessage, handleQueueInspectionMessage } = await loadQueueProtocolApi();
+    const queue = {
+      items: async (): Promise<readonly QueuedItem[]> => [{
+        attemptCount: 2,
+        id: 'capture-1',
+        idempotencyKey: 'private-idempotency-key',
+        nextRetryAt: 5_000,
+        status: 'retry-wait',
+      }],
+    };
+
+    await expect(
+      handleQueueInspectionMessage(
+        createQueueInspectionMessage(),
+        { context: { extensionId: 'extension-id', sender: { id: 'extension-id' } }, queue },
+      ),
+    ).resolves.toEqual({
+      items: [{ attemptCount: 2, id: 'capture-1', nextRetryAt: 5_000, status: 'retry-wait' }],
+      protocolVersion: 1,
+      type: 'queue.inspected',
+    });
   });
 });

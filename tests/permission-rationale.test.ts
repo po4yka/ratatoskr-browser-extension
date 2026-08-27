@@ -13,7 +13,7 @@ describe('minimal permission baseline', () => {
   it('requests only reviewed extension permissions and no persistent page access', () => {
     const manifest = loadManifest();
 
-    expect(manifest['permissions']).toEqual(['activeTab', 'contextMenus', 'storage']);
+    expect(manifest['permissions']).toEqual(['activeTab', 'alarms', 'contextMenus', 'storage']);
     expect(manifest).not.toHaveProperty('host_permissions');
     expect(manifest).not.toHaveProperty('optional_host_permissions');
     expect(manifest).not.toHaveProperty('content_scripts');
@@ -23,7 +23,7 @@ describe('minimal permission baseline', () => {
     const rationale = loadRationale();
 
     expect(rationale).toContain('| Permission | Plan items | User-visible purpose | Why this is minimal |');
-    for (const permission of ['activeTab', 'contextMenus', 'storage']) {
+    for (const permission of ['activeTab', 'alarms', 'contextMenus', 'storage']) {
       expect(rationale).toContain(`| \`${permission}\` |`);
     }
     for (const excluded of ['host_permissions', 'cookies', 'history', 'tabs', 'webRequest', 'downloads', 'scripting', 'commands', 'notifications']) {

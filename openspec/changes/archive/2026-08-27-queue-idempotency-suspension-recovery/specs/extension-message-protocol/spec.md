@@ -1,10 +1,4 @@
-# extension-message-protocol Specification
-
-## Purpose
-
-Defines the safe, typed runtime boundary between Ratatoskr extension surfaces without allowing a page or an unknown extension message to trigger privileged worker behavior.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Versioned extension message contract
 
@@ -50,21 +44,3 @@ or page-private data. A queue-inspection reply SHALL expose only the documented 
 
 - **WHEN** the worker receives a queue-inspection request with unexpected fields or an unexpected sender
 - **THEN** it rejects the request without reading or returning queue state
-
-### Requirement: Exhaustive surface handling
-
-Each protocol receiver SHALL handle every allowed incoming discriminant exhaustively at compile time, so adding a message type cannot silently fall through to a default action.
-
-#### Scenario: Protocol union expands
-
-- **WHEN** a new message discriminant is added to a receiver's accepted union without a matching handler
-- **THEN** the TypeScript type check fails
-
-### Requirement: Explicit content-script activation
-
-The extension SHALL not register a persistent content script or a page-level message bridge. Any future content-script exchange SHALL occur only after an explicit extension user action and SHALL use the extension-runtime protocol rather than page `postMessage` input.
-
-#### Scenario: Package manifest is inspected
-
-- **WHEN** the extension manifest is inspected
-- **THEN** it contains no static content-script declaration and no persistent page host access

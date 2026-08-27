@@ -38,7 +38,7 @@ export interface ContentContextAccepted {
   readonly type: 'content-context.accepted';
 }
 
-export type ProtocolErrorCode = 'invalid-message' | 'unexpected-sender' | 'unknown-message' | 'unsupported-protocol-version';
+export type ProtocolErrorCode = 'invalid-message' | 'queue-unavailable' | 'unexpected-sender' | 'unknown-message' | 'unsupported-protocol-version';
 
 export interface ProtocolError {
   readonly code: ProtocolErrorCode;

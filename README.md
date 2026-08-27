@@ -186,7 +186,7 @@ Provider tokens are never delivered to the extension.
 
 ## Offline and retry queue
 
-Captures may occur while the local deployment is unavailable. The extension can retain a bounded local queue containing:
+Captures may occur while the local deployment is unavailable. The extension retains a bounded local queue containing:
 
 - capture ID and idempotency key;
 - URL and selected text;

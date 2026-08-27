@@ -7,6 +7,7 @@ user-visible capability and explains why `activeTab` or an explicit action is in
 | Permission | Plan items | User-visible purpose | Why this is minimal |
 | --- | --- | --- | --- |
 | `activeTab` | 2, 3, 4, 6, 7, 8 | Lets an explicit popup or menu action read the current tab's URL and title. | Access is temporary and tied to a user gesture; it avoids persistent page access and `tabs`. |
+| `alarms` | 4 | Wakes a retry only for an explicit, locally retained capture after its persisted backoff delay. | MV3 workers cannot retain timers across suspension; it schedules no page monitoring or provider work. |
 | `contextMenus` | 2 | Offers explicit page, link, and selection save actions. | It is limited to the three shipped user-initiated menu entries. |
 | `storage` | 4, 5, 6, 9 | Persists the local queue, registered-device state, bounded operation status, and user settings. | Extension-local storage is the narrow browser capability for durable MV3 state; it grants no page or host access. |
 

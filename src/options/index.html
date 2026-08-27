@@ -7,7 +7,11 @@
   <body>
     <main>
       <h1>Ratatoskr Options</h1>
-      <p data-role="status">Starting…</p>
+      <p aria-live="polite" data-role="status">Starting…</p>
+      <section aria-labelledby="queue-heading">
+        <h2 id="queue-heading">Capture queue</h2>
+        <ul data-role="queue-list"></ul>
+      </section>
     </main>
     <script src="./options.js"></script>
   </body>
