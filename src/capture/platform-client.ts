@@ -7,6 +7,7 @@ export type SocialOutcome =
   | { readonly kind: 'partial'; readonly linkedArticle: 'extraction_failed'; readonly preservedPost: true };
 
 export interface OperationSnapshot {
+  readonly errors: readonly string[];
   readonly operationId: string;
   readonly progressPercent?: number;
   readonly results: readonly OperationResult[];
@@ -110,19 +111,25 @@ function isSnapshot(value: unknown): value is Record<string, unknown> {
 }
 
 function toSnapshot(value: Record<string, unknown>): OperationSnapshot {
+  const snapshotErrors = errors(value.errors);
   const snapshotResults = results(value.results);
   const snapshotWarnings = warnings(value.warnings);
   return {
+    errors: snapshotErrors,
     operationId: value.operation_id as string,
     ...(isNumber(value.progress_percent) ? { progressPercent: value.progress_percent } : {}),
     results: snapshotResults,
     retryable: value.retryable as boolean,
-    ...socialOutcome({ results: snapshotResults, status: value.status as OperationStatus, warnings: snapshotWarnings }),
+    ...socialOutcome({ errors: snapshotErrors, results: snapshotResults, status: value.status as OperationStatus, warnings: snapshotWarnings }),
     ...(isString(value.stage) ? { stage: value.stage } : {}),
     status: value.status as OperationStatus,
     statusChangedAt: value.status_changed_at as string,
     warnings: snapshotWarnings,
   };
+}
+
+function errors(value: unknown): readonly string[] {
+  return Array.isArray(value) ? value.flatMap((error) => isRecord(error) && isString(error.code) ? [error.code] : []) : [];
 }
 
 function results(value: unknown): readonly OperationResult[] {
@@ -134,15 +141,16 @@ function warnings(value: unknown): readonly string[] {
 }
 
 function socialOutcome(snapshot: {
+  readonly errors: readonly string[];
   readonly results: readonly OperationResult[];
   readonly status: OperationStatus;
   readonly warnings: readonly string[];
 }): { readonly socialOutcome: SocialOutcome } | Record<never, never> {
   if (snapshot.status === 'failed') {
-    if (snapshot.warnings.includes('social.source.deleted')) {
+    if (snapshot.errors.includes('social.source.deleted')) {
       return { socialOutcome: { kind: 'unavailable', reason: 'deleted' } };
     }
-    if (snapshot.warnings.includes('social.source.unavailable')) {
+    if (snapshot.errors.includes('social.source.unavailable')) {
       return { socialOutcome: { kind: 'unavailable', reason: 'unavailable' } };
     }
   }

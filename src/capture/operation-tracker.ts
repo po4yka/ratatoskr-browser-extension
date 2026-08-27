@@ -75,7 +75,7 @@ function applyIfNewer(current: TrackedOperation, candidate: OperationSnapshot): 
 }
 
 function acceptedSnapshot(operationId: string): OperationSnapshot {
-  return { operationId, results: [], retryable: false, status: 'accepted', statusChangedAt: '', warnings: [] };
+  return { errors: [], operationId, results: [], retryable: false, status: 'accepted', statusChangedAt: '', warnings: [] };
 }
 
 function hasCapture(items: readonly TrackedOperation[], captureId: string): boolean {
@@ -114,7 +114,7 @@ function hasSnapshotHeader(value: Record<string, unknown>): boolean {
 }
 
 function hasSnapshotCollections(value: Record<string, unknown>): boolean {
-  return [Array.isArray(value.results), Array.isArray(value.warnings)].every(Boolean);
+  return [Array.isArray(value.errors), Array.isArray(value.results), Array.isArray(value.warnings)].every(Boolean);
 }
 
 function isOptionalSocialOutcome(value: unknown): boolean {

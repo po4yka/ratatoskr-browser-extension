@@ -56,6 +56,27 @@ describe('social operation outcomes', () => {
       });
   });
 
+  it('renders a deleted social source from Platform errors rather than warnings', async () => {
+    const { createPlatformCaptureClient } = await loadCaptureClientApi();
+    const client = createPlatformCaptureClient({
+      endpoint: 'https://ratatoskr.example',
+      fetch: async () => new Response(JSON.stringify({
+        errors: [{ code: 'social.source.deleted', retryable: false }],
+        operation_id: 'operation-social-deleted-1',
+        results: [],
+        retryable: false,
+        status: 'failed',
+        status_changed_at: '2026-08-27T10:00:00Z',
+        warnings: [],
+      }), { status: 200 }),
+    });
+
+    await expect(client.readOperation({ accessToken: 'device-token', operationId: 'operation-social-deleted-1' }))
+      .resolves.toMatchObject({
+        socialOutcome: { kind: 'unavailable', reason: 'deleted' },
+      });
+  });
+
   it('renders deleted and unavailable social sources without false completion', async () => {
     const { operationIsTerminal, operationMessage } = await loadApi();
     const deleted: SocialOperation = {

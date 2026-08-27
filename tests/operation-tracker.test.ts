@@ -25,6 +25,7 @@ interface TrackedOperation {
 }
 
 interface Snapshot {
+  readonly errors: readonly string[];
   readonly operationId: string;
   readonly progressPercent?: number;
   readonly results: readonly { readonly resultKind: string; readonly target: string }[];
@@ -52,6 +53,7 @@ async function loadApi(): Promise<TrackerApi> {
 }
 
 const accepted: Snapshot = {
+  errors: [],
   operationId: 'operation-1',
   results: [],
   retryable: false,
