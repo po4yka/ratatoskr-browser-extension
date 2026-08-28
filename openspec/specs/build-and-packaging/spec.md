@@ -5,11 +5,11 @@ Guarantees that the first scaffold of the extension is verifiable: a build anyon
 ## Requirements
 
 ### Requirement: Build produces an installable unpacked extension
-Running the build SHALL produce a distribution directory containing a valid Manifest V3 manifest named for the Ratatoskr browser extension, together with every file that manifest references (service worker entry, popup entry, options entry, icons), so the directory loads unpacked in Chromium without warnings about missing assets.
+Running the build SHALL produce separate `chromium` and `firefox` distribution directories. Each directory SHALL contain a valid Manifest V3 manifest named for the Ratatoskr browser extension together with every referenced service worker, popup, options, localization, style, and icon asset, so each target is loadable by its declared browser family without missing files.
 
 #### Scenario: Build output completeness
-- **WHEN** the build command runs from a clean checkout and the distribution directory is checked against the manifest
-- **THEN** the manifest parses as JSON with `manifest_version` 3 and the product name Ratatoskr, and every path the manifest references exists inside the distribution directory (test: `tests/build-artifacts.test.ts`)
+- **WHEN** the build matrix runs from a clean checkout and both output trees are checked against their manifests
+- **THEN** each manifest parses with `manifest_version` 3, identifies Ratatoskr, contains every referenced file, and passes the target-specific packaged smoke checks (test: `tests/cross-browser-build.test.ts`)
 
 ### Requirement: Manifest permissions stay minimal
 The manifest SHALL request no permissions while no implemented feature needs one, and any future permission addition MUST be a deliberate, reviewed act captured by an updated baseline.
@@ -26,11 +26,25 @@ The manifest SHALL declare an extension-pages content security policy that allow
 - **THEN** script-src and object-src are `'self'`, and no directive value contains `unsafe-eval`, `unsafe-inline`, or a remote origin (test: `tests/manifest-csp.test.ts`)
 
 ### Requirement: Repackaging is byte-stable
-Packaging the built extension into a distributable archive SHALL be deterministic: the same source tree packaged repeatedly SHALL produce archives with identical bytes, through fixed entry ordering and fixed entry timestamps independent of wall-clock time or filesystem metadata.
+Packaging the built extension into Chromium and Firefox distributable archives SHALL be deterministic: the same source tree packaged repeatedly SHALL produce byte-identical target archives and checksum metadata through fixed entry ordering, fixed entry timestamps, and canonical metadata serialization independent of wall-clock time or filesystem metadata.
 
 #### Scenario: Golden determinism check
-- **WHEN** the package command runs twice over the same build output, in separate processes
-- **THEN** both produced archives have identical SHA-256 digests (test: `tests/package-determinism.test.ts`)
+- **WHEN** the package matrix runs twice over unchanged source in separate processes
+- **THEN** the two Chromium archives match byte for byte, the two Firefox archives match byte for byte, and both checksum manifests are identical (test: `tests/package-determinism.test.ts`)
+
+### Requirement: Browser manifest differences are isolated and audited
+The build SHALL derive both target manifests from one shared manifest source plus explicit target deltas. A target delta MUST NOT add a permission, host permission, externally connectable surface, remote-code allowance, or capture behavior without a matching reviewed permission and security baseline.
+
+#### Scenario: Firefox delta stays compatibility-only
+- **WHEN** the manifest matrix test compares the generated Chromium and Firefox manifests
+- **THEN** their behavioral permissions, host access, CSP, action, commands, background entry, and extension pages are equal, and the only differences belong to the checked compatibility allowlist (test: `tests/cross-browser-manifest.test.ts`)
+
+### Requirement: Packaged artifacts are smoke-validated
+The release gate SHALL inspect the contents of each produced archive rather than accepting a successful zip command as proof. It SHALL reject missing referenced files, path traversal entries, unlisted development material, source maps, remote executable code, and a manifest whose target identity differs from the archive name.
+
+#### Scenario: Both release archives pass packaged smoke
+- **WHEN** the packaged-extension smoke runs against the Chromium and Firefox release archives
+- **THEN** both archives pass manifest/reference, forbidden-entry, CSP, target-identity, and permission checks, and the smoke reports the digest it inspected (test: `tests/packaged-extension-smoke.test.ts`)
 
 ### Requirement: Documented gate cannot drift from real scripts
 DEVELOPMENT.md SHALL record the exact command list the product gate runs, and the repository SHALL carry a parity test that fails whenever that recorded list diverges from the scripts actually defined in package.json, in the same spirit as the fleet-wide workflow-vs-document comparison.
