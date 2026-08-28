@@ -12,6 +12,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: extension-store-release
+  cancel-in-progress: false
+
 jobs:
   chromium:
     runs-on: ubuntu-latest

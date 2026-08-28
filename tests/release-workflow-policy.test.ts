@@ -15,6 +15,7 @@ describe('release workflow policy', () => {
     expect(release).toMatch(/on:\s*\n\s+workflow_dispatch:/);
     expect(release).not.toMatch(/pull_request:|push:/);
     expect(release).toMatch(/permissions:\s*\n\s+contents: read/);
+    expect(release).toMatch(/concurrency:\s*\n\s+group: extension-store-release\s*\n\s+cancel-in-progress: false/);
     expect(release.match(/environment: extension-stores/g)).toHaveLength(2);
     expect(release).toContain('npm run release:check');
 
