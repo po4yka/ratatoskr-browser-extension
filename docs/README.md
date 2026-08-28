@@ -7,6 +7,7 @@
 - `DATA_MODEL.md` — extension-local durable state.
 - `THREAT_MODEL.md` — permissions, hostile page, credentials, supply-chain, and privacy risks.
 - `TESTING.md` — unit, browser, lifecycle, and packaging tests.
+- `RELEASE.md` — deterministic target artifacts, owner-held store credentials, and composed smoke.
 - `IMPLEMENTATION_PLAN.md` — ordered client vertical slices.
 - `adr/README.md` — decision process.
 

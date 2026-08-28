@@ -1,0 +1,15 @@
+{
+  "locale": "en-US",
+  "name": "Ratatoskr",
+  "summary": "Explicitly save pages and selected text to your Ratatoskr archive.",
+  "description": [
+    "Explicitly save the current page, a link, or selected text to your paired Ratatoskr deployment.",
+    "Captures are user initiated, queued durably, and submitted with stable idempotency. Ratatoskr does not read provider cookies, browser history, passwords, or hidden network traffic.",
+    "Reviewed extension permissions: activeTab, alarms, contextMenus, storage. Platform origin access is optional and granted only for the HTTPS deployment selected by the user."
+  ],
+  "permissions": ["activeTab", "alarms", "contextMenus", "storage"],
+  "categories": {
+    "firefox": ["bookmarks"]
+  },
+  "license": "AGPL-3.0-or-later"
+}

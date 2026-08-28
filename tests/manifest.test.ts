@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 function loadManifest(): Record<string, unknown> {
-  const raw = readFileSync(new URL('../src/manifest.json', import.meta.url), 'utf8');
+  const raw = readFileSync(new URL('../src/manifests/base.json', import.meta.url), 'utf8');
   return JSON.parse(raw) as Record<string, unknown>;
 }
 

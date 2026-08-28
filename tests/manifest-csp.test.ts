@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 function loadCsp(): string {
-  const raw = readFileSync(new URL('../src/manifest.json', import.meta.url), 'utf8');
+  const raw = readFileSync(new URL('../src/manifests/base.json', import.meta.url), 'utf8');
   const manifest = JSON.parse(raw) as {
     content_security_policy?: { extension_pages?: string };
   };

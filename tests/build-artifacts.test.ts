@@ -10,7 +10,7 @@ const execFileAsync = promisify(execFile);
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 
 type Manifest = {
-  background?: { service_worker?: string };
+  background?: { scripts?: string[]; service_worker?: string };
   action?: { default_popup?: string };
   options_ui?: { page?: string };
   icons?: Record<string, string>;
@@ -19,6 +19,7 @@ type Manifest = {
 function referencedPaths(manifest: Manifest): string[] {
   const candidates = [
     manifest.background?.service_worker,
+    ...(manifest.background?.scripts ?? []),
     manifest.action?.default_popup,
     manifest.options_ui?.page,
     ...Object.values(manifest.icons ?? {}),
@@ -31,14 +32,19 @@ describe('build artifacts', () => {
     const outDir = mkdtempSync(join(tmpdir(), 'ratatoskr-build-'));
     try {
       await expect(
-        execFileAsync('node', ['scripts/build.mjs', outDir], { cwd: repoRoot }),
+        execFileAsync(
+          'node',
+          ['scripts/build.mjs', '--target', 'chromium', '--out-dir', outDir],
+          { cwd: repoRoot },
+        ),
       ).resolves.toBeTruthy();
 
-      const manifestPath = join(outDir, 'manifest.json');
+      const targetRoot = join(outDir, 'chromium');
+      const manifestPath = join(targetRoot, 'manifest.json');
       expect(existsSync(manifestPath)).toBe(true);
       const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as Manifest;
 
-      const missing = referencedPaths(manifest).filter((p) => !existsSync(join(outDir, p)));
+      const missing = referencedPaths(manifest).filter((p) => !existsSync(join(targetRoot, p)));
       expect(missing, 'files referenced by the manifest').toEqual([]);
     } finally {
       rmSync(outDir, { recursive: true, force: true });

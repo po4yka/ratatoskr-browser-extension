@@ -8,15 +8,20 @@ Required tests:
 - Durable queue across service-worker stop/restart, offline, timeout, duplicate submit, retry/cancel/revoke.
 - Device pairing/refresh/revoke and no-secret logs/storage export.
 - Permission grant/denial/removal and capability degradation.
-- CSP/no-eval/no-remote-code, dependency audit, deterministic package contents.
-- Browser automation on Chromium and supported Firefox path.
-- Workspace extension -> Platform -> article/social/GitHub operation flow.
+- CSP/no-eval/no-remote-code, dependency audit, deterministic Chromium/Firefox package contents.
+- Target-manifest delta audit, packaged-archive smoke, deterministic store descriptions/screenshots.
+- Owner-credential blocker and release workflow least-privilege policy.
+- Browser automation on Chromium and the supported Firefox event-page path.
+- Workspace public-Platform smoke with exact profile/revisions/digests and namespaced teardown.
 - Options default-mode persistence and safe queue/device projection.
 - Double-confirmed revoke/clear-all behavior, focus restoration, and complete residue removal.
 - Diagnostics allowlist/redaction against hostile nested URLs, tokens, and user content.
 - Popup/options accessibility checklist and localization catalog/package completeness.
 
 Tests use local mock Platform and synthetic pages; no real provider session or private site fixture.
+Fixture smoke is always labelled `fixture`; only a live workspace profile followed by verified
+teardown can produce passing `composed` evidence. Store API tests validate request plans without
+network mutation.
 
 ## Test-first
 

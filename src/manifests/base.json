@@ -5,6 +5,8 @@
   "default_locale": "en",
   "version": "0.1.0",
   "permissions": ["activeTab", "alarms", "contextMenus", "storage"],
+  "host_permissions": [],
+  "optional_permissions": [],
   "optional_host_permissions": ["https://*/*"],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
@@ -22,8 +24,5 @@
   "options_ui": {
     "page": "options/index.html",
     "open_in_tab": true
-  },
-  "background": {
-    "service_worker": "background/service-worker.js"
   }
 }

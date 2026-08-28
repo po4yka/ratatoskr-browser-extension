@@ -1,11 +1,12 @@
 # Developing Ratatoskr Browser Extension
 
 > Status: Implemented  
-> Last reviewed: 2026-08-26
+> Last reviewed: 2026-08-28
 
 The first scaffold exists: a Manifest V3 project with stubbed service-worker, popup, and options
-surfaces, lint/typecheck/test/build tooling, a strict extension-pages CSP, deterministic zip
-packaging verified by a golden test, and `.github/workflows/ci.yml` running the gate below.
+surfaces, lint/typecheck/test/build tooling, a strict extension-pages CSP, deterministic Chromium
+and Firefox MV3 packaging verified by golden and archive-smoke tests, deterministic store
+listing generation, and `.github/workflows/ci.yml` running the gate below.
 Device pairing, authenticated URL-only Platform capture submission, and operation polling are
 implemented. Explicitly staged capture drafts are persisted in a bounded local queue with
 idempotency and MV3 retry recovery. Quick save returns after durable queueing; tracked save stores
@@ -50,9 +51,19 @@ npm run typecheck
 npm run test
 npm run build
 npm run package
+npm run package:smoke
+npm run store-assets
+npm run release:check
 ```
 
-`npm run gate` chains those five in order. Build output goes to `dist/`, packaged archives to `release/`; both are deterministic, so rebuilding an unchanged tree reproduces byte-identical files. Load the unpacked extension in Chromium via `chrome://extensions` with Developer mode enabled, choosing `dist/` as the unpacked directory.
+`npm run gate` chains those eight in order. Build output goes to `dist/chromium/` and
+`dist/firefox/`; target archives and `SHA256SUMS` go to `release/`, and generated descriptions,
+metadata, screenshots, and their checksum index go to `store-assets/`. Rebuilding unchanged source
+reproduces byte-identical target outputs. Load Chromium from `dist/chromium/`; load Firefox's
+temporary add-on from `dist/firefox/` during development. Store signing/upload and composed-profile
+evidence are documented in `docs/RELEASE.md` and are distinct from the local product gate.
+The Firefox target requires Firefox 142 or later so its optional-origin and data-collection
+declarations are understood by both desktop and Android manifest validators.
 
 `tests/gate-parity.test.ts` compares this command list with `package.json`, so the two cannot drift apart silently.
 

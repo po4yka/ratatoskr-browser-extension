@@ -54,8 +54,30 @@ describe('gate parity', () => {
 
     // Same steps, same order, every name resolvable.
     expect(documented).toEqual(gateOrder);
+    expect(gateOrder).toEqual([
+      'lint',
+      'typecheck',
+      'test',
+      'build',
+      'package',
+      'package:smoke',
+      'store-assets',
+      'release:check',
+    ]);
     for (const name of documented) {
       expect(scripts[name], `script ${name}`).toBeDefined();
     }
+  });
+
+  it('records plan item 10 as complete without overstating publication', () => {
+    const implementationPlan = readRepoFile('docs/IMPLEMENTATION_PLAN.md');
+    const readme = readRepoFile('README.md');
+    expect(implementationPlan).toContain(
+      '10. **Complete:** add cross-browser packaging/release/signing and workspace integration.',
+    );
+    expect(readme).toContain('Implementation-plan items 1–10 now have code and focused tests.');
+    expect(readme).not.toMatch(/cross-browser release (?:work is still pending|packaging remains)/i);
+    expect(readme).toContain('upload blocker');
+    expect(readme).toContain('composed-profile evidence');
   });
 });

@@ -50,6 +50,9 @@ jobs:
       - run: npm run test
       - run: npm run build
       - run: npm run package
+      - run: npm run package:smoke
+      - run: npm run store-assets
+      - run: npm run release:check
 
       # Every dependency here ships to a browser, so the tree is the supply chain. `--omit=dev`
       # asks about what a user actually downloads; the build tooling is audited by the unfiltered

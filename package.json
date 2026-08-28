@@ -11,9 +11,14 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "build": "node scripts/build.mjs",
-    "package": "npm run build && node scripts/package.mjs",
-    "gate": "npm run lint && npm run typecheck && npm run test && npm run build && npm run package"
+    "build": "node scripts/build.mjs --target all --out-dir dist",
+    "package": "node scripts/package.mjs --dist-dir dist --out-dir release",
+    "package:smoke": "node scripts/package-smoke.mjs --release-dir release && web-ext lint --source-dir dist/firefox --no-config-discovery --output json",
+    "store-assets": "node scripts/generate-store-assets.mjs --out-dir store-assets",
+    "release:check": "node scripts/release-upload.mjs --store all --dist-dir dist --release-dir release --listing-dir store-assets",
+    "release:upload": "node scripts/release-upload.mjs --dist-dir dist --release-dir release --listing-dir store-assets",
+    "workspace:smoke": "node scripts/workspace-smoke.mjs",
+    "gate": "npm run lint && npm run typecheck && npm run test && npm run build && npm run package && npm run package:smoke && npm run store-assets && npm run release:check"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -25,6 +30,7 @@
     "globals": "^17.11.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.68.0",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.11",
+    "web-ext": "10.6.0"
   }
 }

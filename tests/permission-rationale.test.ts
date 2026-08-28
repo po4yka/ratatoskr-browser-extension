@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 function loadManifest(): Record<string, unknown> {
-  return JSON.parse(readFileSync(new URL('../src/manifest.json', import.meta.url), 'utf8')) as Record<string, unknown>;
+  return JSON.parse(readFileSync(new URL('../src/manifests/base.json', import.meta.url), 'utf8')) as Record<string, unknown>;
 }
 
 function loadRationale(): string {
@@ -14,7 +14,7 @@ describe('minimal permission baseline', () => {
     const manifest = loadManifest();
 
     expect(manifest['permissions']).toEqual(['activeTab', 'alarms', 'contextMenus', 'storage']);
-    expect(manifest).not.toHaveProperty('host_permissions');
+    expect(manifest['host_permissions']).toEqual([]);
     expect(manifest['optional_host_permissions']).toEqual(['https://*/*']);
     expect(manifest).not.toHaveProperty('content_scripts');
   });
@@ -29,5 +29,9 @@ describe('minimal permission baseline', () => {
     for (const excluded of ['host_permissions', 'cookies', 'history', 'tabs', 'webRequest', 'downloads', 'scripting', 'commands', 'notifications']) {
       expect(rationale).toContain(`\`${excluded}\``);
     }
+    expect(rationale).toContain('implementation-plan items 1–10');
+    expect(rationale).toContain('browser_specific_settings.gecko.data_collection_permissions');
+    expect(rationale).toContain('websiteActivity');
+    expect(rationale).toContain('websiteContent');
   });
 });

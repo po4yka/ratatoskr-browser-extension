@@ -16,6 +16,8 @@ node_modules/
 dist/
 build/
 release/
+store-assets/
+release-evidence/
 *.crx
 *.xpi
 

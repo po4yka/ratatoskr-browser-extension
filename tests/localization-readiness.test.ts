@@ -21,7 +21,7 @@ function messageKeys(source: string): string[] {
 describe('localization readiness', () => {
   it('every manifest and surface message key resolves', () => {
     const messages = catalog();
-    const sources = ['src/manifest.json', 'src/popup/index.html', 'src/options/index.html']
+    const sources = ['src/manifests/base.json', 'src/popup/index.html', 'src/options/index.html']
       .map((path) => readFileSync(join(repoRoot, path), 'utf8'));
     const keys = sources.flatMap(messageKeys);
     expect(keys.length).toBeGreaterThan(20);
@@ -37,8 +37,14 @@ describe('localization readiness', () => {
   it('packaged catalog is complete', async () => {
     const outDir = mkdtempSync(join(tmpdir(), 'ratatoskr-i18n-'));
     try {
-      await execFileAsync('node', ['scripts/build.mjs', outDir], { cwd: repoRoot });
-      expect(catalog(join(outDir, '_locales/en/messages.json'))).toEqual(catalog());
+      await execFileAsync(
+        'node',
+        ['scripts/build.mjs', '--target', 'all', '--out-dir', outDir],
+        { cwd: repoRoot },
+      );
+      for (const target of ['chromium', 'firefox']) {
+        expect(catalog(join(outDir, target, '_locales/en/messages.json'))).toEqual(catalog());
+      }
     } finally {
       rmSync(outDir, { force: true, recursive: true });
     }

@@ -5,7 +5,8 @@
 > **Status:** active implementation. The TypeScript Manifest V3 client has explicit draft capture,
 > a bounded durable queue, device pairing and revocation, generic/social submission, operation
 > tracking, a privacy-preserving options surface, and the capability-gated GitHub repository flow
-> described below. Cross-browser release packaging remains a later implementation-plan item.
+> described below. Chromium and Firefox MV3 targets, deterministic store material, owner-gated
+> release automation, and a composed-profile evidence boundary are implemented.
 
 > [!IMPORTANT]
 > **Ratatoskr is in development.** No database holds data that has to survive a schema change.
@@ -351,15 +352,22 @@ the packaging path copies that catalog deterministically and is ready for future
 7. Add explicit X, Instagram, and Threads URL recognition.
 8. Add compatibility checks and end-to-end tests against local Platform.
 9. Add options, revoke/clear-data, redacted diagnostics, accessibility, and localization readiness.
-10. Add cross-browser packaging, release signing, and workspace integration.
+10. **Complete:** add cross-browser packaging, release signing, and workspace integration.
 
 ## Workspace integration
 
-The planned workspace harness will pin the extension with compatible Platform, social, GitHub,
-Extractor, Knowledge, and public API contract commits. The pin, isolated-browser integration test,
-and workspace Compose profile do not exist yet.
+`npm run workspace:smoke -- observe ...` validates both packaged targets against an explicitly
+supplied task-namespaced workspace profile and public Platform origin. A second `finalize` phase
+accepts namespaced teardown evidence; only then can the record say `kind: composed` and
+`status: passed`. Local synthetic-server tests remain `kind: fixture` and cannot become
+composed-profile evidence. The currently compatible profile exercises the public Platform status
+and capability boundary; it does not prove browser capture submission or a live deployment.
+
+Store publication has the same evidence boundary. `npm run release:check` is non-mutating. An
+explicit upload either uses owner-held credentials or emits an upload blocker containing exact
+missing credential names; local packaging success is never reported as store signing or upload.
 
 ## Project status
 
-Implementation-plan items 1–9 now have code and focused tests. The exact local product gate remains
-documented in `DEVELOPMENT.md`; cross-browser release work is still pending.
+Implementation-plan items 1–10 now have code and focused tests. The exact local product gate remains
+documented in `DEVELOPMENT.md`; publication and composed smoke evidence are recorded separately.

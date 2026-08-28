@@ -1,6 +1,6 @@
 # Browser permission rationale
 
-This table is the reviewed permission baseline for implementation-plan items 1–9. Any
+This table is the reviewed permission baseline for implementation-plan items 1–10. Any
 manifest permission or host-pattern addition requires a new reviewed change that names the
 user-visible capability and explains why `activeTab` or an explicit action is insufficient.
 
@@ -16,6 +16,12 @@ GitHub preview and action requests reuse that exact paired Platform origin throu
 They add no GitHub host permission: Edge owns routing and the extension never calls GitHub directly.
 Plan item 9 adds no manifest permission. Diagnostics download through an in-page `Blob`, so the
 `downloads` permission is neither needed nor requested.
+
+Plan item 10 adds no WebExtension permission or host grant. Chromium and Firefox are generated from
+the same baseline above. Firefox signing metadata uses
+`browser_specific_settings.gecko.data_collection_permissions` to disclose `websiteActivity` and
+`websiteContent`, because an explicit save can transmit a URL/title and user-selected text. That
+store disclosure is not browser authority and does not enable passive collection.
 
 ## Not requested in this milestone
 
