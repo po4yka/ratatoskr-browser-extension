@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { isAbsolute, join, resolve } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
@@ -21,7 +21,9 @@ function requireOptions(options, names) {
 }
 
 function writeJson(path, value) {
-  writeFileSync(resolve(repoRoot, path), `${JSON.stringify(value, null, 2)}\n`);
+  const output = resolve(repoRoot, path);
+  mkdirSync(dirname(output), { recursive: true });
+  writeFileSync(output, `${JSON.stringify(value, null, 2)}\n`);
 }
 
 function validateOrigin(value) {

@@ -57,7 +57,7 @@ function observeArgs(output: string): string[] {
 
 describe('workspace smoke evidence', () => {
   it('records exact live inputs and artifact digests without relabelling fixture proof', async () => {
-    const pending = join(workDir, 'pending.json');
+    const pending = join(workDir, 'new-evidence-directory', 'pending.json');
     const teardown = join(workDir, 'teardown.json');
     const output = join(workDir, 'evidence.json');
     await execFileAsync('node', observeArgs(pending), { cwd: repoRoot });
