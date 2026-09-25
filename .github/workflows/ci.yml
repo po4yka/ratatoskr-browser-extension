@@ -9,6 +9,9 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Weekly on main, so a date-dependent test or a runner change is caught without a push.
+  schedule:
+    - cron: "7 5 * * 1"
 
 # SECURITY.md: deny by default. The gate reads the tree and needs nothing else.
 permissions:
