@@ -1,3 +1,4 @@
+import { canonicalizeWireTimestamp } from '../protocol/wire-timestamp';
 import type { SocialCaptureProvenance } from './draft';
 
 export { createGithubRepositoryClient } from '../github/client';
@@ -62,17 +63,7 @@ async function submit(options: { readonly endpoint: string; readonly fetch: type
   const response = await requestPlatform(options, {
     accessToken: request.accessToken,
     init: {
-      body: JSON.stringify({
-        ...(request.social === undefined ? {} : {
-          social: {
-            acquisition: request.social.acquisition,
-            captured_at: request.social.capturedAt,
-            provider: request.social.provider,
-            saved_authority: request.social.savedAuthority,
-          },
-        }),
-        url: request.url,
-      }),
+      body: JSON.stringify({ ...socialBody(request.social), url: request.url }),
       headers: { 'idempotency-key': request.idempotencyKey },
       method: 'POST',
     },
@@ -83,6 +74,24 @@ async function submit(options: { readonly endpoint: string; readonly fetch: type
     throw failure(response.status);
   }
   return { operationId: body.operation_id };
+}
+
+/**
+ * The single wire edge for `captured_at`: a draft queued by an older build may hold a fraction with
+ * trailing zeros, which Platform rejects permanently, so it is re-rendered canonically here.
+ */
+function socialBody(social: SocialCaptureProvenance | undefined): Record<string, unknown> {
+  if (social === undefined) return {};
+  const capturedAt = canonicalizeWireTimestamp(social.capturedAt);
+  if (capturedAt === undefined) throw new PlatformCaptureError('permanent');
+  return {
+    social: {
+      acquisition: social.acquisition,
+      captured_at: capturedAt,
+      provider: social.provider,
+      saved_authority: social.savedAuthority,
+    },
+  };
 }
 
 async function readOperation(options: { readonly endpoint: string; readonly fetch: typeof fetch }, request: AuthorizedOperationRequest): Promise<OperationSnapshot> {

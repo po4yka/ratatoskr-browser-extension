@@ -10,8 +10,8 @@
 
 ## 3. Repair at the wire edge
 
-- [ ] 3.1 Add `repairs a queued non-canonical captured_at when submitting` and `fails permanently when captured_at is not a UTC instant` to `tests/wire-timestamp.test.ts`; run them and confirm they fail because `submit` forwards the stored string unchanged.
-- [ ] 3.2 Implement `canonicalizeWireTimestamp` and call it in `submit()` in `src/capture/platform-client.ts`, throwing `PlatformCaptureError('permanent')` before any request when it returns `undefined`; rerun and confirm both pass.
+- [x] 3.1 Add `repairs a queued non-canonical captured_at when submitting` and `fails permanently when captured_at is not a UTC instant` to `tests/wire-timestamp.test.ts`; run them and confirm they fail because `submit` forwards the stored string unchanged.
+- [x] 3.2 Implement `canonicalizeWireTimestamp` and call it in `submit()` in `src/capture/platform-client.ts`, throwing `PlatformCaptureError('permanent')` before any request when it returns `undefined`; rerun and confirm both pass.
 
 ## 4. Full validation
 
