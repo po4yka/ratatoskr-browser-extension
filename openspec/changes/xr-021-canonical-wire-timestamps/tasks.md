@@ -5,8 +5,8 @@
 
 ## 2. Strict draft validation
 
-- [ ] 2.1 Add `rejects non-canonical and accepts canonical draft timestamps` to `tests/wire-timestamp.test.ts` (`isCaptureDraft` rejects `.120Z` and `.100Z`, accepts `.12Z`, `.1Z` and `Z`); run it and confirm it fails because the current validator accepts `.120Z`.
-- [ ] 2.2 Implement `isCanonicalWireTimestamp` per CONTRACTS.md S10 CD4 and use it in `src/protocol/validation.ts` in place of `isCanonicalTimestamp`; rerun and confirm it passes.
+- [x] 2.1 Add `rejects non-canonical and accepts canonical draft timestamps` to `tests/wire-timestamp.test.ts` (`isCaptureDraft` rejects `.120Z` and `.100Z`, accepts `.12Z`, `.1Z` and `Z`); run it and confirm it fails because the current validator accepts `.120Z`.
+- [x] 2.2 Implement `isCanonicalWireTimestamp` per CONTRACTS.md S10 CD4 and use it in `src/protocol/validation.ts` in place of `isCanonicalTimestamp`; rerun and confirm it passes.
 
 ## 3. Repair at the wire edge
 

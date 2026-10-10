@@ -1,4 +1,5 @@
 import { classifyGithubRepository, classifySocialCapture, type CaptureDraft } from '../capture/draft';
+import { isCanonicalWireTimestamp } from './wire-timestamp';
 import type { ContentContext, ContentContextMessage, PopupStageDraftMessage, ProtocolError } from './messages';
 
 export type UnknownRecord = Record<string, unknown>;
@@ -67,7 +68,7 @@ function hasValidDraftSocial(value: UnknownRecord): boolean {
   return route?.provider === value.social.provider
     && value.social.acquisition === 'browser_extension'
     && value.social.savedAuthority === 'explicit_user_capture'
-    && isCanonicalTimestamp(value.social.capturedAt);
+    && isCanonicalWireTimestamp(value.social.capturedAt);
 }
 
 function hasValidDraftGithub(value: UnknownRecord): boolean {
@@ -76,12 +77,6 @@ function hasValidDraftGithub(value: UnknownRecord): boolean {
   return isRecord(value.github)
     && hasOnlyKeys(value.github, ['previewUrl'])
     && value.github.previewUrl === route.previewUrl;
-}
-
-function isCanonicalTimestamp(value: unknown): boolean {
-  return typeof value === 'string'
-    && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?Z$/.test(value)
-    && !/\.0+Z$/.test(value);
 }
 
 function isOneOf(value: unknown, values: readonly string[]): value is string {

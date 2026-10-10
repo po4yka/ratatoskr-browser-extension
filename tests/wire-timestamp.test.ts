@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createDraft } from '../src/capture/draft';
+import { isCaptureDraft } from '../src/protocol/validation';
 import { formatWireTimestamp } from '../src/protocol/wire-timestamp';
 
 const second = '2026-08-27T09:30:00';
@@ -7,6 +8,18 @@ const base = Date.parse(`${second}Z`);
 
 function oracle(ms: number): string {
   return `${second}${ms === 0 ? '' : `.${String(ms).padStart(3, '0').replace(/0+$/, '')}`}Z`;
+}
+
+function socialDraft(capturedAt: string): unknown {
+  const url = 'https://x.com/ratatoskr/status/1234567890123456789';
+  return {
+    captureKind: 'page',
+    entryPoint: 'popup',
+    social: { acquisition: 'browser_extension', capturedAt, provider: 'x', savedAuthority: 'explicit_user_capture' },
+    sourcePageUrl: url,
+    title: 'A post',
+    url,
+  };
 }
 
 afterEach(() => {
@@ -32,5 +45,13 @@ describe('canonical wire timestamps', () => {
     });
 
     expect(draft.social?.capturedAt).toBe(`${second}.12Z`);
+  });
+
+  it('rejects non-canonical and accepts canonical draft timestamps', () => {
+    expect(isCaptureDraft(socialDraft(`${second}.120Z`))).toBe(false);
+    expect(isCaptureDraft(socialDraft(`${second}.100Z`))).toBe(false);
+    expect(isCaptureDraft(socialDraft(`${second}.12Z`))).toBe(true);
+    expect(isCaptureDraft(socialDraft(`${second}.1Z`))).toBe(true);
+    expect(isCaptureDraft(socialDraft(`${second}Z`))).toBe(true);
   });
 });
