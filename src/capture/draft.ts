@@ -1,3 +1,5 @@
+import { formatWireTimestamp } from '../protocol/wire-timestamp';
+
 export type CaptureEntryPoint = 'popup' | 'page-menu' | 'link-menu' | 'selection-menu';
 export type CaptureKind = 'page' | 'link' | 'selection';
 export type SocialCaptureProvider = 'x' | 'instagram' | 'threads';
@@ -204,7 +206,7 @@ function socialCapture(url: string): { readonly social: SocialCaptureProvenance 
     : {
       social: {
         acquisition: 'browser_extension',
-        capturedAt: new Date().toISOString().replace(/\.000Z$/, 'Z'),
+        capturedAt: formatWireTimestamp(new Date()),
         provider: route.provider,
         savedAuthority: 'explicit_user_capture',
       },

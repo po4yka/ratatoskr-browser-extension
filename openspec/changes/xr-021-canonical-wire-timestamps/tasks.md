@@ -1,7 +1,7 @@
 ## 1. Canonical formatter and draft stamping
 
-- [ ] 1.1 Add `tests/wire-timestamp.test.ts` with `formats every millisecond value of a second canonically` (the oracle comparison over 0..999 and the `/\.\d*0Z$/` exclusion) and `stamps a social draft with a canonical captured_at` (clock fixed at 120 ms, expects `:00.12Z`), plus a signature-only `src/protocol/wire-timestamp.ts`; run the file and confirm both tests fail on their assertions.
-- [ ] 1.2 Implement `formatWireTimestamp` and use it in `socialCapture()` in `src/capture/draft.ts`; rerun `tests/wire-timestamp.test.ts` and confirm both tests pass.
+- [x] 1.1 Add `tests/wire-timestamp.test.ts` with `formats every millisecond value of a second canonically` (the oracle comparison over 0..999 and the `/\.\d*0Z$/` exclusion) and `stamps a social draft with a canonical captured_at` (clock fixed at 120 ms, expects `:00.12Z`), plus a signature-only `src/protocol/wire-timestamp.ts`; run the file and confirm both tests fail on their assertions.
+- [x] 1.2 Implement `formatWireTimestamp` and use it in `socialCapture()` in `src/capture/draft.ts`; rerun `tests/wire-timestamp.test.ts` and confirm both tests pass.
 
 ## 2. Strict draft validation
 
