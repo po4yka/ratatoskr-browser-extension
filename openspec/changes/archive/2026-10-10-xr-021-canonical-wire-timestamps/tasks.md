@@ -15,4 +15,4 @@
 
 ## 4. Full validation
 
-- [ ] 4.1 Run `npm run gate`, `openspec validate --all --strict` and `openspec validate --archived`, then archive the change; a gate run cannot start from a failing test.
+- [x] 4.1 Run `npm run gate`, `openspec validate --all --strict` and `openspec validate --archived`, then archive the change; a gate run cannot start from a failing test.
