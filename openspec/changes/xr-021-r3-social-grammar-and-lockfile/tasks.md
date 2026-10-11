@@ -10,5 +10,5 @@
 
 ## 3. Documentation and validation
 
-- [ ] 3.1 State the grammar table in `README.md` and the public registry in `DEVELOPMENT.md`; documentation cannot start from a failing test.
-- [ ] 3.2 Run `npm run gate` and `openspec validate --all --strict`, then archive the change; a gate run cannot start from a failing test.
+- [x] 3.1 State the grammar table in `README.md` and the public registry in `DEVELOPMENT.md`; documentation cannot start from a failing test.
+- [x] 3.2 Run `npm run gate` and `openspec validate --all --strict`, then archive the change; a gate run cannot start from a failing test.

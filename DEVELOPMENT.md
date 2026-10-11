@@ -43,6 +43,8 @@ Install once per clone (Node LTS line pinned by `.nvmrc`):
 npm ci --frozen-lockfile
 ```
 
+`.npmrc` pins `registry=https://registry.npmjs.org/` and `package-lock.json` resolves every package from that public registry, so `npm ci` works on any machine without a mirror or credentials; `tests/lockfile-registry.test.ts` fails on any other `resolved` host. A package-manager wrapper that rewrites registry URLs, such as an `npm` alias for the Safety CLI, will put its mirror back into the lockfile when you run `npm install`, so regenerate the lockfile with the unwrapped `npm` binary.
+
 The product gate runs these commands:
 
 ```bash

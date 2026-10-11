@@ -156,8 +156,19 @@ saved_authority = explicit_user_capture
 ```
 
 Platform routes that command to the owning social service rather than generic article extraction.
-Profiles, lookalike hosts, and unsupported provider paths remain generic captures. The extension
-does not read provider cookies, storage, DOM, hidden APIs, or native Saved/bookmark state.
+Profiles, lookalike hosts, and unsupported provider paths remain generic captures.
+
+A permalink is routed to a provider only when its path matches the grammar that provider's service accepts, because Platform checks only the host and a refused input would end as a terminal `failed` operation. Anything else, such as an X status id of 20 digits or a Threads post code of 129 characters, is captured as a plain URL through the generic lane. The grammar is the table of XR-021 CONTRACTS.md section R3-15, and it applies on `https` only:
+
+| Provider | Hosts | Path |
+| --- | --- | --- |
+| X | `x.com`, `www.x.com`, `mobile.x.com`, `twitter.com`, `www.twitter.com`, `mobile.twitter.com` | `^/[A-Za-z0-9_]{1,15}/status/[0-9]{1,19}/?$` |
+| Instagram | `instagram.com`, `www.instagram.com` | `^/(?:[^/]+/)?(?:p\|reel\|reels\|tv)/[A-Za-z0-9_-]{1,64}/?$` |
+| Threads | `threads.net`, `www.threads.net`, `threads.com`, `www.threads.com` | `^/@[A-Za-z0-9._]{1,30}/post/[A-Za-z0-9_-]{1,128}/?$` |
+
+The X pattern is stricter than the X service on purpose (the service admits any handle and `statuses`); the extension's job is not to promise a lane for an input the lane refuses.
+
+The extension does not read provider cookies, storage, DOM, hidden APIs, or native Saved/bookmark state.
 
 For X, the official connector remains authoritative for bookmark synchronization. An explicit extension capture can coexist with a native X bookmark but preserves its own provenance.
 
