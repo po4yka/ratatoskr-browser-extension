@@ -5,8 +5,8 @@
 
 ## 2. Lockfile from the public registry
 
-- [ ] 2.1 Add `tests/lockfile-registry.test.ts` (`every_resolved_url_is_on_the_public_npm_registry`, `the_repository_pins_the_registry`); run it and confirm it fails on the 452 mirror URLs and the missing `.npmrc`.
-- [ ] 2.2 Add `.npmrc`, regenerate `package-lock.json` against the public registry, confirm no `integrity` changed, rerun the test and confirm it passes.
+- [x] 2.1 Add `tests/lockfile-registry.test.ts` (`every_resolved_url_is_on_the_public_npm_registry`, `the_repository_pins_the_registry`); run it and confirm it fails on the 452 mirror URLs and the missing `.npmrc`.
+- [x] 2.2 Add `.npmrc`, regenerate `package-lock.json` against the public registry, confirm no `integrity` changed, rerun the test and confirm it passes.
 
 ## 3. Documentation and validation
 
