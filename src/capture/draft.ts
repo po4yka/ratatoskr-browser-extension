@@ -56,14 +56,16 @@ export type DraftState =
 
 export class CaptureDraftError extends Error {}
 
+// The permalink grammar of XR-021 CONTRACTS.md R3-15: each pattern is the lane service's own (or its
+// stricter subset), so a link the lane would refuse is captured through the generic URL lane instead.
 const socialRoutes: readonly {
   readonly hosts: ReadonlySet<string>;
   readonly path: RegExp;
   readonly provider: SocialCaptureProvider;
 }[] = [
-  { hosts: new Set(['x.com', 'www.x.com', 'mobile.x.com', 'twitter.com', 'www.twitter.com', 'mobile.twitter.com']), path: /^\/[A-Za-z0-9_]{1,15}\/status\/\d{1,20}\/?$/, provider: 'x' },
-  { hosts: new Set(['instagram.com', 'www.instagram.com']), path: /^\/(?:p|reel)\/[A-Za-z0-9_-]+\/?$/, provider: 'instagram' },
-  { hosts: new Set(['threads.net', 'www.threads.net', 'threads.com', 'www.threads.com']), path: /^\/@[A-Za-z0-9._]{1,64}\/post\/[A-Za-z0-9_-]+\/?$/, provider: 'threads' },
+  { hosts: new Set(['x.com', 'www.x.com', 'mobile.x.com', 'twitter.com', 'www.twitter.com', 'mobile.twitter.com']), path: /^\/[A-Za-z0-9_]{1,15}\/status\/[0-9]{1,19}\/?$/, provider: 'x' },
+  { hosts: new Set(['instagram.com', 'www.instagram.com']), path: /^\/(?:[^/]+\/)?(?:p|reel|reels|tv)\/[A-Za-z0-9_-]{1,64}\/?$/, provider: 'instagram' },
+  { hosts: new Set(['threads.net', 'www.threads.net', 'threads.com', 'www.threads.com']), path: /^\/@[A-Za-z0-9._]{1,30}\/post\/[A-Za-z0-9_-]{1,128}\/?$/, provider: 'threads' },
 ];
 
 export function createDraft(input: CaptureDraftInput): CaptureDraft {
