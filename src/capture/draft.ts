@@ -61,9 +61,9 @@ const socialRoutes: readonly {
   readonly path: RegExp;
   readonly provider: SocialCaptureProvider;
 }[] = [
-  { hosts: new Set(['x.com', 'www.x.com', 'mobile.x.com']), path: /^\/[A-Za-z0-9_]{1,15}\/status\/\d{1,20}\/?$/, provider: 'x' },
+  { hosts: new Set(['x.com', 'www.x.com', 'mobile.x.com', 'twitter.com', 'www.twitter.com', 'mobile.twitter.com']), path: /^\/[A-Za-z0-9_]{1,15}\/status\/\d{1,20}\/?$/, provider: 'x' },
   { hosts: new Set(['instagram.com', 'www.instagram.com']), path: /^\/(?:p|reel)\/[A-Za-z0-9_-]+\/?$/, provider: 'instagram' },
-  { hosts: new Set(['threads.net', 'www.threads.net']), path: /^\/@[A-Za-z0-9._]{1,64}\/post\/[A-Za-z0-9_-]+\/?$/, provider: 'threads' },
+  { hosts: new Set(['threads.net', 'www.threads.net', 'threads.com', 'www.threads.com']), path: /^\/@[A-Za-z0-9._]{1,64}\/post\/[A-Za-z0-9_-]+\/?$/, provider: 'threads' },
 ];
 
 export function createDraft(input: CaptureDraftInput): CaptureDraft {
